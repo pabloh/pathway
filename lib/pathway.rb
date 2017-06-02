@@ -1,5 +1,2 @@
-require "pathway/version"
-
-module Pathway
-  # Your code goes here...
-end
+require 'pathway/version'
+require 'pathway/operation'
