@@ -15,7 +15,7 @@ module Pathway
 
     def initialize(type:, message: nil, details: nil)
       @type    = type.to_sym
-      @message = message || ERROR_MESSAGES[@type] || @type.to_s.tr('_', ' ').capitalize
+      @message = message || ERROR_MESSAGES[@type] || Inflecto.humanize(@type)
       @details = details || {}
     end
   end

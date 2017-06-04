@@ -7,7 +7,7 @@ module Pathway
 
           define_singleton_method :included do |klass|
             klass.class_eval do
-              result_at model_class.name.split('::').last.underscore.to_sym
+              result_at Inflecto.underscore(model_class.name.split('::').last).to_sym
 
               define_method(:model_class) { model_class }
               define_method(:field)       { by }
