@@ -27,7 +27,7 @@ RSpec::Matchers.define :require_fields do |*fields|
       [required_list, not_defined_list].compact.join("; and ")
   end
 
-  include FormSchemaHelpers
+  include Pathway::Testing::FormSchemaHelpers
 
   def required_list
     "#{as_list(required)} #{were_was(required)} required" if required.any?

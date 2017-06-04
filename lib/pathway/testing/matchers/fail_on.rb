@@ -94,5 +94,5 @@ RSpec::Matchers.define :fail_on do |input|
     details_matches? ? nil : "have details like #{description_of(@details)} but instead got #{description_of(error.details)}"
   end
 
-  include ListHelpers
+  include Pathway::Testing::ListHelpers
 end

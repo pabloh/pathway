@@ -27,7 +27,7 @@ RSpec::Matchers.define :accept_optional_fields do |*fields|
       [optional_list, not_defined_list].compact.join("; and ")
   end
 
-  include FormSchemaHelpers
+  include Pathway::Testing::FormSchemaHelpers
 
   def optional_list
     "#{as_list(optional)} #{were_was(optional)} optional" if optional.any?
