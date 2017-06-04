@@ -11,6 +11,7 @@ if ENV['CI']
 end
 
 require 'pathway'
+require 'sequel'
 
 # Load testing support files
 Dir[__dir__ + '/support/**/*.rb'].each { |support| require support }
