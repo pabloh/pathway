@@ -42,25 +42,28 @@ module Pathway
         end
       end
 
-      extend Forwardable
+      module InstanceMethods
+        extend Forwardable
+
+        delegate :build_form => 'self.class'
+        alias :form :build_form
+
+        def validate(state)
+          validate_with(state[:input])
+            .then { |params| state.update(params: params) }
+        end
+
+        def validate_with(params, opts = {})
+          val = form(opts).call(params)
+
+          val.success? ? wrap(val.output) : error(:validation, details: val.messages)
+        end
+      end
 
       def self.included(klass)
         klass.extend ClassMethods
+        klass.include InstanceMethods
         klass.form_class = Pathway::Form
-      end
-
-      delegate :build_form => 'self.class'
-      alias :form :build_form
-
-      def validate(state)
-        validate_with(state[:input])
-          .then { |params| state.update(params: params) }
-      end
-
-      def validate_with(params, opts = {})
-        val = form(opts).call(params)
-
-        val.success? ? wrap(val.output) : error(:validation, details: val.messages)
       end
     end
   end

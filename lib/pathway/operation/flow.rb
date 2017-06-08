@@ -22,17 +22,22 @@ module Pathway
         end
       end
 
-      extend Forwardable
+      module InstanceMethods
+        def result_key
+          self.class.result_key
+        end
 
-      delegate :result_key => 'self.class'
+        def sequence(&bl)
+          # TODO: Implement
+        end
+      end
 
       def self.included(klass)
         klass.extend ClassMethods
+        klass.include InstanceMethods
         klass.result_key = :value
       end
 
-      def sequence(&bl)
-      end
     end
   end
 end

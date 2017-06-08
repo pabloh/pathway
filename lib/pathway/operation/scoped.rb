@@ -9,15 +9,18 @@ module Pathway
         end
       end
 
+      module InstanceMethods
+        def initialize(*)
+        end
+
+        def context
+          @context || {}
+        end
+      end
+
       def self.included(klass)
         klass.extend ClassMethods
-      end
-
-      def initialize(*)
-      end
-
-      def context
-        @context || {}
+        klass.include InstanceMethods
       end
     end
   end

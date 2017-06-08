@@ -7,21 +7,24 @@ module Pathway
         end
       end
 
+      module InstanceMethods
+        def authorize(state)
+          authorize_with(state.result).then { state }
+        end
+
+        def authorize_with(*objs)
+          objs = objs.first if objs.size <= 1
+          authorized?(*objs) ? wrap(objs) : error(:forbidden)
+        end
+
+        def authorized?(*_)
+          true
+        end
+      end
+
       def self.included(klass)
         klass.extend ClassMethods
-      end
-
-      def authorize(state)
-        authorize_with(state.result).then { state }
-      end
-
-      def authorize_with(*objs)
-        objs = objs.first if objs.size <= 1
-        authorized?(*objs) ? wrap(objs) : error(:forbidden)
-      end
-
-      def authorized?(*_)
-        true
+        klass.include InstanceMethods
       end
     end
   end
