@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'pathway/responder'
 
 module Pathway
   describe Responder do

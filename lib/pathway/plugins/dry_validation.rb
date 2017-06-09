@@ -1,14 +1,14 @@
 require 'pathway/form'
 
 module Pathway
-  class Operation
-    module Validation
+  module Plugins
+    module DryValidation
       module ClassMethods
         attr_reader :form_class
 
         def form(base = nil, **opts, &block)
           if block_given?
-            base ||= superclass.form_class
+            base ||= _base_form 
             self.form_class = Dry::Validation.Form(_form_class(base), _opts(opts), &block)
           elsif base
             self.form_class = _form_class(base)
@@ -32,6 +32,10 @@ module Pathway
         end
 
         private
+
+        def _base_form
+          superclass.respond_to?(:form_class) ? superclass.form_class : Pathway::Form
+        end
 
         def _form_class(form)
           form.is_a?(Class) ? form : form.class
@@ -60,10 +64,8 @@ module Pathway
         end
       end
 
-      def self.included(klass)
-        klass.extend ClassMethods
-        klass.include InstanceMethods
-        klass.form_class = Pathway::Form
+      def self.apply(operation)
+        operation.form_class = Pathway::Form
       end
     end
   end

@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Pathway
-  class Operation
+  module Plugins
     describe Flow do
       class OperationWithSteps < Operation
         scope :validator, :back_end, :notifier, :mailer

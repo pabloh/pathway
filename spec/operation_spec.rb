@@ -2,13 +2,11 @@ require 'spec_helper'
 
 module Pathway
   describe Operation do
-    SimpleModel = Struct.new(:name, :email, :role, :profile)
-
-    SimpleForm = Dry::Validation.Form(Pathway::Form) do
-      required(:age).filled(:int?)
-    end
-
     class SimpleOperation < Operation
+      plugin :dry_validation
+      plugin :authorization
+      plugin :responder
+
       scope :user, :repository
 
       authorization { user.role == :root }
@@ -36,8 +34,14 @@ module Pathway
       end
     end
 
+    SimpleModel = Struct.new(:name, :email, :role, :profile)
+
+    SimpleForm = Dry::Validation.Form(Pathway::Form) do
+      required(:age).filled(:int?)
+    end
+
     describe ".form_class" do
-      subject(:operation_class) { Class.new(Operation) }
+      subject(:operation_class) { Class.new(Operation) { plugin :dry_validation } }
 
       context "when no form's been setup" do
         it "returns a default empty form" do
@@ -56,6 +60,8 @@ module Pathway
     describe ".build_form" do
       subject(:operation_class) do
         Class.new(Operation) do
+          plugin :dry_validation
+
           form do
             configure do
               option :quz
@@ -76,7 +82,12 @@ module Pathway
 
     describe ".form" do
       context "when called with a form" do
-        subject(:operation_class) { Class.new(Operation) { form SimpleForm } }
+        subject(:operation_class) do
+          Class.new(Operation) do
+            plugin :dry_validation
+            form SimpleForm
+          end
+        end
 
         it "uses the passed form's class" do
           expect(operation_class.form_class).to eq(SimpleForm.class)
@@ -85,6 +96,7 @@ module Pathway
         context "and a block" do
           subject(:operation_class) do
             Class.new(Operation) do
+              plugin :dry_validation
               form(SimpleForm) { required(:gender).filled }
             end
           end
@@ -101,7 +113,12 @@ module Pathway
       end
 
       context "when called with a form class" do
-        subject(:operation_class) { Class.new(Operation) { form SimpleForm.class } }
+        subject(:operation_class) do
+          Class.new(Operation) do
+            plugin :dry_validation
+            form SimpleForm.class
+          end
+        end
 
         it "uses the passed class as is" do
           expect(operation_class.form_class).to eq(SimpleForm.class)
@@ -111,6 +128,7 @@ module Pathway
       context "when called with a block" do
         subject(:operation_class) do
           Class.new(Operation) do
+            plugin :dry_validation
             form { required(:gender).filled }
           end
         end
@@ -129,6 +147,8 @@ module Pathway
     describe ".authorization" do
       subject(:operation_class) do
         Class.new(Operation) do
+          plugin :authorization
+
           scope :role
           authorization { role == :admin }
         end
