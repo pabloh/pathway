@@ -1,5 +1,5 @@
 module Pathway
-  module Testing
+  module Rspec
     module ListHelpers
       def as_list(items)
         as_sentence(items.map(&:inspect))

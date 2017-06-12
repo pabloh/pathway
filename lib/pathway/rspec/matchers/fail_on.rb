@@ -1,4 +1,4 @@
-require 'pathway/testing/matchers/list_helpers'
+require 'pathway/rspec/matchers/list_helpers'
 
 RSpec::Matchers.define :fail_on do |input|
   match do |operation|
@@ -94,5 +94,5 @@ RSpec::Matchers.define :fail_on do |input|
     details_matches? ? nil : "have details like #{description_of(@details)} but instead got #{description_of(error.details)}"
   end
 
-  include Pathway::Testing::ListHelpers
+  include Pathway::Rspec::ListHelpers
 end

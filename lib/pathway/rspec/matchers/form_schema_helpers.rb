@@ -1,7 +1,7 @@
-require 'pathway/testing/matchers/field_list_helpers'
+require 'pathway/rspec/matchers/field_list_helpers'
 
 module Pathway
-  module Testing
+  module Rspec
     module FormSchemaHelpers
       include FieldListHelpers
 

@@ -1,7 +1,7 @@
-require 'pathway/testing/matchers/list_helpers'
+require 'pathway/rspec/matchers/list_helpers'
 
 module Pathway
-  module Testing
+  module Rspec
     module FieldListHelpers
       include ListHelpers
 

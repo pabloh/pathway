@@ -1,4 +1,4 @@
-require 'pathway/testing/matchers/form_schema_helpers'
+require 'pathway/rspec/matchers/form_schema_helpers'
 
 RSpec::Matchers.define :require_fields do |*fields|
   match do |form|
@@ -27,7 +27,7 @@ RSpec::Matchers.define :require_fields do |*fields|
       [required_list, not_defined_list].compact.join("; and ")
   end
 
-  include Pathway::Testing::FormSchemaHelpers
+  include Pathway::Rspec::FormSchemaHelpers
 
   def required_list
     "#{as_list(required)} #{were_was(required)} required" if required.any?
