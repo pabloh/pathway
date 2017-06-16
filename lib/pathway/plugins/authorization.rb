@@ -1,5 +1,5 @@
 module Pathway
-  class Operation
+  module Plugins
     module Authorization
       module ClassMethods
         def authorization(&block)
@@ -20,11 +20,6 @@ module Pathway
         def authorized?(*_)
           true
         end
-      end
-
-      def self.included(klass)
-        klass.extend ClassMethods
-        klass.include InstanceMethods
       end
     end
   end
