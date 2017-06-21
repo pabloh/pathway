@@ -5,12 +5,11 @@ module Pathway
     module SequelModels
       module DSLMethods
         def transaction(&bl)
-          @result.then do |;result|
-            @operation.db.transaction(savepoint: true) do
-              @result = Flow::DSL.new(@operation, @result).run(&bl)
-              raise Sequel::Rollback if @result.failure?
+          sequence(-> seq, _ {
+            db.transaction(savepoint: true) do
+              raise Sequel::Rollback if seq.call.failure?
             end
-          end
+          }, &bl)
         end
       end
 

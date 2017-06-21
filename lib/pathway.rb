@@ -99,34 +99,32 @@ module Pathway
         end
 
         # Execute step and preserve the former state
-        def step(callable = nil, &bl)
-          bl = _callable(callable, &bl)
+        def step(callable)
+          bl = _callable(callable)
 
-          and_then do |state|
-            wrap(bl.call(state)).then { state }
-          end
+          @result = @result.tee { |state| bl.call(state) }
         end
 
         # Execute step and modify the former state setting the key
-        def set(to = nil, callable = nil, &bl)
-          to, callable = @operation.result_key, to unless block_given? || callable
-          bl = _callable(callable, &bl)
+        def set(to = nil, callable = nil)
+          to, callable = @operation.result_key, to unless callable
+          bl = _callable(callable)
 
-          and_then do |state|
+          @result = @result.then do |state|
             wrap(bl.call(state))
               .then { |value| state.update(to => value) }
           end
         end
 
         # Execute step and replace the current state completely
-        def and_then(callable = nil, &bl)
-          bl = _callable(callable, &bl)
+        def map(callable)
+          bl = _callable(callable)
           @result = @result.then(bl)
         end
 
         def sequence(with_seq, &bl)
           @result.then do |state|
-            seq = -> { DSL.new(@operation, @result).run(&bl) }
+            seq = -> { @result = DSL.new(@operation, @result).run(&bl) }
             @operation.instance_exec(seq, state, &with_seq)
           end
         end

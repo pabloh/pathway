@@ -9,7 +9,7 @@ module Pathway
         def form(base = nil, **opts, &block)
           if block_given?
             base ||= _base_form 
-            self.form_class = Dry::Validation.Form(_form_class(base), _opts(opts), &block)
+            self.form_class = Dry::Validation.Form(_form_class(base), _form_opts(opts), &block)
           elsif base
             self.form_class = _form_class(base)
           else
@@ -41,7 +41,7 @@ module Pathway
           form.is_a?(Class) ? form : form.class
         end
 
-        def _opts(opts = {})
+        def _form_opts(opts = {})
           opts.merge(build: false)
         end
       end

@@ -24,7 +24,7 @@ module Pathway
         describe "#transaction" do
           let(:result) { operation.call(params) }
           let(:params) { { email: 'asd@fgh.net' } }
-          let(:model) { double }
+          let(:model)  { double }
 
           it "returns the result state provided by the inner transaction when successful" do
             allow(MyModel).to receive(:first).with(params).and_return(model)
