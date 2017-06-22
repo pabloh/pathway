@@ -6,14 +6,14 @@ module Pathway
 
       describe DSL do
         class OperationWithSteps < Operation
-          scope :validator, :back_end, :notifier
+          scope :validator, :back_end, :notifier, :cond
           result_at :result_value
 
           process do
             step :_custom_validate
             set  :_get_value
             set  :aux_value, :_get_aux_value
-            sequence(-> seq, st { seq.call if st[:result_value] == 0 }) do
+            sequence(-> seq, st { seq.call if cond.call(st) }) do
               set :aux_value, ->_ { 99 }
               set ->_ { :UPDATED }
             end
@@ -42,9 +42,10 @@ module Pathway
         let(:validator) { double }
         let(:back_end)  { double }
         let(:notifier)  { double }
+        let(:cond)      { double }
 
         subject(:operation) do
-          OperationWithSteps.new(validator: validator, back_end: back_end, notifier: notifier)
+          OperationWithSteps.new(validator: validator, back_end: back_end, notifier: notifier, cond: cond)
         end
 
         before do
@@ -53,6 +54,7 @@ module Pathway
           end
 
           allow(back_end).to receive(:call).and_return(1234567890)
+          allow(cond).to receive(:call).and_return(false)
 
           allow(notifier).to receive(:call)
         end
@@ -109,17 +111,30 @@ module Pathway
 
         describe "#sequence" do
           it "provides the step sequence and state as the block parameter" do
-            expect(result.value).to eq(1234567890)
+            expect(cond).to receive(:call) do |state|
+              expect(state.to_hash).to include(result_value: 1234567890, aux_value: 1234567890)
+
+              true
+            end
+
+            expect(result.value).to eq(:UPDATED)
           end
 
           it "transfers inner sequence state to the outer sequence" do
-            allow(back_end).to receive(:call).and_return(0)
+            expect(cond).to receive(:call).and_return(true)
 
             expect(notifier).to receive(:call) do |state|
               expect(state.to_hash).to include(aux_value: 99, result_value: :UPDATED)
             end
 
             expect(result.value).to eq(:UPDATED)
+          end
+
+          it "is skiped althougher on a failure state" do
+            allow(back_end).to receive(:call).and_return(Result.failure(:not_available))
+            expect(cond).to_not receive(:call)
+
+            expect(result).to be_a_failure
           end
         end
 
