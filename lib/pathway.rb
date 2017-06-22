@@ -84,12 +84,8 @@ module Pathway
       end
 
       class DSL
-        def initialize(operation, input_or_result)
-          @result = if input_or_result.is_a?(Result)
-                     input_or_result
-                    else
-                     wrap(State.new(operation, input: input_or_result))
-                    end
+        def initialize(operation, input)
+          @result = wrap(State.new(operation, input: input))
           @operation = operation
         end
 
@@ -124,8 +120,8 @@ module Pathway
 
         def sequence(with_seq, &bl)
           @result.then do |state|
-            seq = -> { @result = DSL.new(@operation, @result).run(&bl) }
-            @operation.instance_exec(seq, state, &with_seq)
+            seq = -> { @result = dup.run(&bl) }
+            _callable(with_seq).call(seq, state)
           end
         end
 
@@ -135,13 +131,12 @@ module Pathway
           Result.result(obj)
         end
 
-        def _callable(callable = nil, &bl)
-          fail "next step not provided" unless callable || bl
-
-          if block_given?
-            -> arg { @operation.instance_exec(arg, &bl) }
-          elsif callable.is_a?(Symbol)
-            -> arg { @operation.send(callable, arg) }
+        def _callable(callable)
+          case callable
+          when Proc
+            -> *args { @operation.instance_exec(*args, &callable) }
+          when Symbol
+            -> *args { @operation.send(callable, *args) }
           else
             callable
           end

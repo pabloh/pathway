@@ -17,6 +17,9 @@ module Pathway
               set :aux_value, ->_ { 99 }
               set ->_ { :UPDATED }
             end
+            sequence(:if_zero) do
+              set ->_ { :ZERO }
+            end
             step :_notify
           end
 
@@ -32,6 +35,10 @@ module Pathway
 
           def _get_aux_value(state)
             state[result_key]
+          end
+
+          def if_zero(seq, state)
+            seq.call if state[:result_value] == 0
           end
 
           def _notify(state)
@@ -135,6 +142,12 @@ module Pathway
             expect(cond).to_not receive(:call)
 
             expect(result).to be_a_failure
+          end
+
+          it "accepts a method name as a parameter" do
+            allow(back_end).to receive(:call).and_return(0)
+
+            expect(result.value).to eq(:ZERO)
           end
         end
 
