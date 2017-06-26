@@ -20,6 +20,9 @@ module Pathway
             sequence(:if_zero) do
               set ->_ { :ZERO }
             end
+            guard(:neg?) do
+              set ->_ { :NEGATIVE }
+            end
             step :_notify
           end
 
@@ -39,6 +42,10 @@ module Pathway
 
           def if_zero(seq, state)
             seq.call if state[:result_value] == 0
+          end
+
+          def neg?(state)
+            state[:result_value].is_a?(Numeric) && state[:result_value].negative?
           end
 
           def _notify(state)
@@ -116,6 +123,14 @@ module Pathway
           end
         end
 
+        describe "#step" do
+          it "defines an non updating step" do
+            expect(notifier).to receive(:call) { { result_value: 0 } }
+
+            expect(result.value).to eq(1234567890)
+          end
+        end
+
         describe "#sequence" do
           it "provides the step sequence and state as the block parameter" do
             expect(cond).to receive(:call) do |state|
@@ -151,13 +166,19 @@ module Pathway
           end
         end
 
-        describe "#step" do
-          it "defines an non updating step" do
-            expect(notifier).to receive(:call) { { result_value: 0 } }
+        describe "#guard" do
+          before { allow(back_end).to receive(:call).and_return(77) }
 
-            expect(result.value).to eq(1234567890)
+          it "runs the inner step sequence when the condition is meet" do
+            allow(back_end).to receive(:call).and_return(-1)
+            expect(result.value).to eq(:NEGATIVE)
+          end
+
+          it "skips the inner step sequence when the condition is not meet" do
+            expect(result.value).to eq(77)
           end
         end
+
       end
 
     end

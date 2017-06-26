@@ -125,6 +125,13 @@ module Pathway
           end
         end
 
+        def guard(cond, &bl)
+          cond = _callable(cond)
+          sequence(-> seq, state {
+            seq.call if cond.call(state)
+          }, &bl)
+        end
+
         private
 
         def wrap(obj)
