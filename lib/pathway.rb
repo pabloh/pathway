@@ -102,8 +102,7 @@ module Pathway
         end
 
         # Execute step and modify the former state setting the key
-        def set(to = nil, callable = nil)
-          to, callable = @operation.result_key, to unless callable
+        def set(callable, to: @operation.result_key)
           bl = _callable(callable)
 
           @result = @result.then do |state|

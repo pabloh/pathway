@@ -12,9 +12,9 @@ module Pathway
           process do
             step :_custom_validate
             set  :_get_value
-            set  :aux_value, :_get_aux_value
+            set  :_get_aux_value, to: :aux_value
             sequence(-> seq, st { seq.call if cond.call(st) }) do
-              set :aux_value, ->_ { 99 }
+              set ->_ { 99 }, to: :aux_value
               set ->_ { :UPDATED }
             end
             sequence(:if_zero) do
