@@ -12,6 +12,7 @@ end
 
 require 'pathway'
 require 'sequel'
+require 'pry'
 
 # Load testing support files
 Dir[__dir__ + '/support/**/*.rb'].each { |support| require support }
