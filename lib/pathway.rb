@@ -3,7 +3,6 @@ require 'inflecto'
 require 'pathway/version'
 require 'pathway/initializer'
 require 'pathway/result'
-require 'pathway/error'
 
 module Pathway
   class Operation
@@ -15,6 +14,29 @@ module Pathway
       self.extend plugin::ClassMethods if plugin.const_defined? :ClassMethods
       self.include plugin::InstanceMethods if plugin.const_defined? :InstanceMethods
       plugin.apply(self) if plugin.respond_to?(:apply)
+    end
+  end
+
+  class Error < StandardError
+    attr_reader :type, :message, :details
+    singleton_class.send :attr_accessor, :default_messages
+
+    @default_messages = {}
+
+    alias :error_type :type
+    alias :error_message :message
+    alias :errors :details
+
+    def initialize(type:, message: nil, details: nil)
+      @type    = type.to_sym
+      @message = message || default_message_for(type)
+      @details = details || {}
+    end
+
+    private
+
+    def default_message_for(type)
+      self.class.default_messages[type] || Inflecto.humanize(type)
     end
   end
 
