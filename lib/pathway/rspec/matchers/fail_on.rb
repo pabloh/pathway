@@ -46,7 +46,7 @@ RSpec::Matchers.define :fail_on do |input|
       "Expected operation to fail but it didn't"
     else
       "Expected failed operation to " +
-        as_sentence(failure_descriptions, connector: '; ', last_connector: '; and')
+        as_sentence(failure_descriptions, connector: '; ', last_connector: '; and ')
     end
   end
 
