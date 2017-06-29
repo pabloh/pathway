@@ -16,20 +16,20 @@ module Pathway
         optional(:email).maybe(:str?)
       end
 
-      def call(params)
-        validate_with(params)
-          .then { |params|  fetch_profile(params) }
-          .tee  { |profile| authorize_with(nil) }
-          .then { |profile| update_model(params, profile) }
+      process do
+        step :validate
+        step :authorize
+        set  :fetch_profile, to: :profile
+        set  :create_model
       end
 
       private
 
-      def fetch_profile(params)
+      def fetch_profile(params:,**)
         wrap_if_present(repository.fetch(params))
       end
 
-      def update_model(params, profile)
+      def create_model(params:, profile:,**)
         SimpleModel.new(*params.values, user.role, profile)
       end
     end
