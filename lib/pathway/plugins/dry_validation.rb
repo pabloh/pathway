@@ -1,4 +1,4 @@
-require 'pathway/form'
+require 'dry/validation'
 
 module Pathway
   module Plugins
@@ -8,7 +8,7 @@ module Pathway
 
         def form(base = nil, **opts, &block)
           if block_given?
-            base ||= _base_form 
+            base ||= _base_form
             self.form_class = Dry::Validation.Form(_form_class(base), _form_opts(opts), &block)
           elsif base
             self.form_class = _form_class(base)
@@ -34,7 +34,7 @@ module Pathway
         private
 
         def _base_form
-          superclass.respond_to?(:form_class) ? superclass.form_class : Pathway::Form
+          superclass.respond_to?(:form_class) ? superclass.form_class : Dry::Validation::Schema::Form
         end
 
         def _form_class(form)
@@ -65,7 +65,7 @@ module Pathway
       end
 
       def self.apply(operation)
-        operation.form_class = Pathway::Form
+        operation.form_class = Dry::Validation::Schema::Form
       end
     end
   end
