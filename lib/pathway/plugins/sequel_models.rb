@@ -13,10 +13,6 @@ module Pathway
         end
       end
 
-      def self.apply(*)
-        Flow::DSL.include(DSLMethods)
-      end
-
       module InstanceMethods
         module Finder
           def self.[](model_class, by: :id)

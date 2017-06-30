@@ -24,6 +24,7 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = ">= 2.4.0"
 
   spec.add_dependency "inflecto"
+  spec.add_dependency "contextualizer", "~> 0.0.3"
 
   spec.add_development_dependency "dry-validation", "~> 0.10.7"
   spec.add_development_dependency "bundler", ">= 1.14.0"

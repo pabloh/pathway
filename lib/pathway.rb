@@ -1,7 +1,7 @@
 require 'forwardable'
 require 'inflecto'
+require 'contextualizer'
 require 'pathway/version'
-require 'pathway/initializer'
 require 'pathway/result'
 
 module Pathway
@@ -13,8 +13,13 @@ module Pathway
 
       self.extend plugin::ClassMethods if plugin.const_defined? :ClassMethods
       self.include plugin::InstanceMethods if plugin.const_defined? :InstanceMethods
+      # TODO: Separate DSL per operation hierarchy
+      DSL.include plugin::DSLMethods if plugin.const_defined? :DSLMethods
       plugin.apply(self) if plugin.respond_to?(:apply)
     end
+  end
+
+  class DSL
   end
 
   class Error < StandardError
@@ -40,25 +45,34 @@ module Pathway
     end
   end
 
-  module Plugins
-    module Scope
-      module ClassMethods
-        def scope(*attrs)
-          include Initializer[*attrs]
-        end
-      end
+  class State
+    extend Forwardable
 
-      module InstanceMethods
-        def initialize(*)
-        end
-
-        def context
-          @context || {}
-        end
-      end
+    def initialize(operation, values = {})
+      @hash = operation.context.merge(values)
+      @result_key = operation.result_key
     end
 
-    module Flow
+    delegate %i([] []= fetch store include?) => :@hash
+
+    def update(kargs)
+      @hash.update(kargs)
+      self
+    end
+
+    def result
+      @hash[@result_key]
+    end
+
+    def to_hash
+      @hash
+    end
+
+    alias :to_h :to_hash
+  end
+
+  module Plugins
+    module Base
       module ClassMethods
         attr_accessor :result_key
 
@@ -102,10 +116,11 @@ module Pathway
       end
 
       def self.apply(klass)
+        klass.extend Contextualizer
         klass.result_key = :value
       end
 
-      class DSL
+      module DSLMethods
         def initialize(operation, input)
           @result = wrap(State.new(operation, input: input))
           @operation = operation
@@ -170,35 +185,8 @@ module Pathway
           end
         end
       end
-
-      class State
-        extend Forwardable
-
-        def initialize(operation, values = {})
-          @hash = operation.context.merge(values)
-          @result_key = operation.result_key
-        end
-
-        delegate %i([] []= fetch store include?) => :@hash
-
-        def update(kargs)
-          @hash.update(kargs)
-          self
-        end
-
-        def result
-          @hash[@result_key]
-        end
-
-        def to_hash
-          @hash
-        end
-
-        alias :to_h :to_hash
-      end
     end
   end
 
-  Operation.plugin Plugins::Scope
-  Operation.plugin Plugins::Flow
+  Operation.plugin Plugins::Base
 end

@@ -7,7 +7,7 @@ module Pathway
       plugin :authorization
       plugin :responder
 
-      scope :user, :repository
+      context :user, :repository
 
       authorization { user.role == :root }
 
@@ -149,7 +149,8 @@ module Pathway
         Class.new(Operation) do
           plugin :authorization
 
-          scope :role
+          context :role
+
           authorization { role == :admin }
         end
       end
@@ -157,19 +158,6 @@ module Pathway
       it "defines an 'authorized?' method using provided block", :aggregate_failures do
         expect(operation_class.new(role: :admin)).to be_authorized
         expect(operation_class.new(role: :clerk)).not_to be_authorized
-      end
-    end
-
-    describe ".scope" do
-      subject(:operation_class) do
-        Class.new(Operation) { scope :foo, :bar }
-      end
-
-      it "includes an Scope module defining the scope dependencies" do
-        operation = operation_class.new(foo: "XXX", bar: "YYY")
-
-        expect(operation.foo).to eq("XXX")
-        expect(operation.bar).to eq("YYY")
       end
     end
 
