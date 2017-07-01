@@ -13,13 +13,18 @@ module Pathway
 
       self.extend plugin::ClassMethods if plugin.const_defined? :ClassMethods
       self.include plugin::InstanceMethods if plugin.const_defined? :InstanceMethods
-      # TODO: Separate DSL per operation hierarchy
-      DSL.include plugin::DSLMethods if plugin.const_defined? :DSLMethods
+      self::DSL.include plugin::DSLMethods if plugin.const_defined? :DSLMethods
+
       plugin.apply(self) if plugin.respond_to?(:apply)
     end
-  end
 
-  class DSL
+    def self.inherited(subclass)
+      subclass.const_set :DSL, Class.new(self::DSL)
+      super
+    end
+
+    class DSL
+    end
   end
 
   class Error < StandardError
@@ -77,9 +82,9 @@ module Pathway
         attr_accessor :result_key
 
         def process(&bl)
+          dsl = self::DSL
           define_method(:call) do |input|
-            DSL.new(self, input).run(&bl)
-              .then { |state| state[result_key] }
+            dsl.new(self, input).run(&bl).then(&:result)
           end
         end
 
