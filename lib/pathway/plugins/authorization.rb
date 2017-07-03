@@ -8,8 +8,8 @@ module Pathway
       end
 
       module InstanceMethods
-        def authorize(state)
-          authorize_with(state.result).then { state }
+        def authorize(state, using: nil)
+          authorize_with(state[using || result_key]).then { state }
         end
 
         def authorize_with(*objs)

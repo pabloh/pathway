@@ -52,8 +52,9 @@ module Pathway
         delegate :build_form => 'self.class'
         alias :form :build_form
 
-        def validate(state)
-          validate_with(state[:input])
+        def validate(state, with: [])
+          opts = Array(with).map { |key| [key, state[key]] }.to_h
+          validate_with(state[:input], opts)
             .then { |params| state.update(params: params) }
         end
 
