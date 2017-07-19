@@ -35,21 +35,17 @@ module Pathway
         extend Forwardable
         delegate %i[model_class db field] => 'self.class'
 
-        def fetch_model(state)
-          fetch_model_with(state[:input])
+        def fetch_model(state, from: model_class, key: field, column: field)
+          find_model_with(state[:input][key], from, column)
             .then { |model| state.update(result_key => model) }
-        end
-
-        def fetch_model_with(params)
-          wrap_if_present(find_model_with(params[field]))
         end
 
         def build_model_with(params)
           wrap(model_class.new(params))
         end
 
-        def find_model_with(key)
-          model_class.first(field => key)
+        def find_model_with(key, dataset = model_class, column = field)
+          wrap_if_present(dataset.first(column => key))
         end
       end
     end

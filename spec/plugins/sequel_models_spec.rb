@@ -68,19 +68,19 @@ module Pathway
             operation.build_model_with(params)
           end
 
-          it "defines instance method 'fetch_model_with' to fetch object from model_class" do
+          it "defines instance method 'fetch_model' step to fetch object from model_class into result key" do
             allow(MyModel).to receive(:first).with(email: key).and_return(object)
 
-            expect(operation.fetch_model_with(email: key)).to be_an(Result::Success)
-            expect(operation.fetch_model_with(email: key).value).to eq(object)
+            expect(operation.fetch_model(input: {email: key})).to be_an(Result::Success)
+            expect(operation.fetch_model(input: {email: key}).value[:my_model]).to eq(object)
           end
 
-          it "defines instance method 'fetch_model_with' to return error when object is missing", :aggregate_failures do
+          it "defines instance method 'fetch_model' to return error when object is missing", :aggregate_failures do
             allow(MyModel).to receive(:first).with(email: key).and_return(nil)
 
-            expect(operation.fetch_model_with(email: key)).to be_an(Result::Failure)
-            expect(operation.fetch_model_with(email: key).error).to be_an(Pathway::Error)
-            expect(operation.fetch_model_with(email: key).error.type).to eq(:not_found)
+            expect(operation.fetch_model(input: {email: key})).to be_an(Result::Failure)
+            expect(operation.fetch_model(input: {email: key}).error).to be_an(Pathway::Error)
+            expect(operation.fetch_model(input: {email: key}).error.type).to eq(:not_found)
           end
         end
 
