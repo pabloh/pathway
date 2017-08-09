@@ -4,11 +4,8 @@ module Pathway
   describe Operation do
     class SimpleOperation < Operation
       plugin :dry_validation
-      plugin :authorization
 
       context :user, :repository
-
-      authorization { user.role == :root }
 
       form do
         required(:name).filled(:str?)
@@ -17,7 +14,6 @@ module Pathway
 
       process do
         step :validate
-        step :authorize
         set  :fetch_profile, to: :profile
         set  :create_model
       end
@@ -143,23 +139,6 @@ module Pathway
       end
     end
 
-    describe ".authorization" do
-      subject(:operation_class) do
-        Class.new(Operation) do
-          plugin :authorization
-
-          context :role
-
-          authorization { role == :admin }
-        end
-      end
-
-      it "defines an 'authorized?' method using provided block", :aggregate_failures do
-        expect(operation_class.new(role: :admin)).to be_authorized
-        expect(operation_class.new(role: :clerk)).not_to be_authorized
-      end
-    end
-
     describe "#call" do
       subject(:operation) { SimpleOperation.new(ctx) }
 
@@ -190,14 +169,6 @@ module Pathway
           expect(result).to be_a_failure
           expect(result.error.type).to eq(:validation)
           expect(result.error.details).to eq(name: ['is missing'])
-        end
-      end
-
-      context "when calling with without proper authorization" do
-        let(:role) { :user }
-        it "returns a failed result", :aggregate_failures do
-          expect(result).to be_a_failure
-          expect(result.error.type).to eq(:forbidden)
         end
       end
     end
