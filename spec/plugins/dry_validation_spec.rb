@@ -1,0 +1,178 @@
+require 'spec_helper'
+
+module Pathway
+  module Plugins
+    describe 'DryValidation' do
+      class SimpleOperation < Operation
+        plugin :dry_validation
+
+        context :user, :repository
+
+        form do
+          required(:name).filled(:str?)
+          optional(:email).maybe(:str?)
+        end
+
+        process do
+          step :validate
+          set  :fetch_profile, to: :profile
+          set  :create_model
+        end
+
+        private
+
+        def fetch_profile(params:,**)
+          wrap_if_present(repository.fetch(params))
+        end
+
+        def create_model(params:, profile:,**)
+          SimpleModel.new(*params.values, user.role, profile)
+        end
+      end
+
+      SimpleModel = Struct.new(:name, :email, :role, :profile)
+
+      SimpleForm = Dry::Validation.Form do
+        required(:age).filled(:int?)
+      end
+
+      describe ".form_class" do
+        subject(:operation_class) { Class.new(Operation) { plugin :dry_validation } }
+
+        context "when no form's been setup" do
+          it "returns a default empty form" do
+            expect(operation_class.form_class).to eq(Dry::Validation::Schema::Form)
+          end
+        end
+
+        context "when a form's been set" do
+          it "returns the form" do
+            operation_class.form_class = SimpleForm
+            expect(operation_class.form_class).to eq(SimpleForm)
+          end
+        end
+      end
+
+      describe ".build_form" do
+        subject(:operation_class) do
+          Class.new(Operation) do
+            plugin :dry_validation
+
+            form do
+              configure do
+                option :quz
+                define_method(:quz?) { |val| val == quz }
+              end
+
+              required(:qux).value(:quz?)
+            end
+          end
+        end
+
+        let(:form) { operation_class.build_form(quz: "XXX") }
+
+        it "uses passed the option from the context to the form" do
+          expect(form.call(qux: "XXX")).to be_a_success
+        end
+      end
+
+      describe ".form" do
+        context "when called with a form" do
+          subject(:operation_class) do
+            Class.new(Operation) do
+              plugin :dry_validation
+              form SimpleForm
+            end
+          end
+
+          it "uses the passed form's class" do
+            expect(operation_class.form_class).to eq(SimpleForm.class)
+          end
+
+          context "and a block" do
+            subject(:operation_class) do
+              Class.new(Operation) do
+                plugin :dry_validation
+                form(SimpleForm) { required(:gender).filled }
+              end
+            end
+
+            it "extend from the form's class" do
+              expect(operation_class.form_class).to be < SimpleForm.class
+            end
+
+            it "extends the form rules with the block's rules" do
+              expect(operation_class.form_class.rules.map(&:name))
+                .to include(:age, :gender)
+            end
+          end
+        end
+
+        context "when called with a form class" do
+          subject(:operation_class) do
+            Class.new(Operation) do
+              plugin :dry_validation
+              form SimpleForm.class
+            end
+          end
+
+          it "uses the passed class as is" do
+            expect(operation_class.form_class).to eq(SimpleForm.class)
+          end
+        end
+
+        context "when called with a block" do
+          subject(:operation_class) do
+            Class.new(Operation) do
+              plugin :dry_validation
+              form { required(:gender).filled }
+            end
+          end
+
+          it "extends from the default form class" do
+            expect(operation_class.form_class).to be < Dry::Validation::Schema::Form
+          end
+
+          it "uses the rules defined at the passed block" do
+            expect(operation_class.form_class.rules.map(&:name))
+              .to include(:gender)
+          end
+        end
+      end
+
+      describe "#call" do
+        subject(:operation) { SimpleOperation.new(ctx) }
+
+        let(:ctx)        { { user: double("User", role: role), repository: repository } }
+        let(:role)       { :root }
+        let(:params)     { { name: "Paul Smith", email: "psmith@email.com" } }
+        let(:result)     { operation.call(params) }
+        let(:repository) { double.tap { |repo| allow(repo).to receive(:fetch).and_return(double) } }
+
+        context "when calling with valid params" do
+          it "returns a successful result", :aggregate_failures do
+            expect(result).to be_a_success
+            expect(result.value).to_not be_nil
+          end
+        end
+
+        context "when finding model fails" do
+          let(:repository) { double.tap { |repo| allow(repo).to receive(:fetch).and_return(nil) } }
+          it "returns a a failed result", :aggregate_failures do
+            expect(result).to be_a_failure
+            expect(result.error.type).to eq(:not_found)
+          end
+        end
+
+        context "when calling with invalid params" do
+          let(:params) { { email: "psmith@email.com" } }
+          it "returns a failed result", :aggregate_failures do
+            expect(result).to be_a_failure
+            expect(result.error.type).to eq(:validation)
+            expect(result.error.details).to eq(name: ['is missing'])
+          end
+        end
+      end
+    end
+  end
+end
