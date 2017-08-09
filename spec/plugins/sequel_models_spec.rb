@@ -68,10 +68,23 @@ module Pathway
             operation.build_model_with(params)
           end
 
-          it "defines instance method 'fetch_model' step to fetch object from model_class into result key" do
-            allow(MyModel).to receive(:first).with(email: key).and_return(object)
+          let(:repository) { double }
 
-            expect(operation.fetch_model(input: {email: key})).to be_an(Result::Success)
+          it "defines instance method 'fetch_model' step to fetch object from model_class into result key" do
+            expect(repository).to receive(:first).with(pk: 'foo').and_return(object)
+            expect(MyModel).to_not receive(:first)
+
+            result = operation
+                       .fetch_model({input: {myid: 'foo'}}, from: repository, key: :myid, column: :pk)
+                       .value[:my_model]
+
+            expect(result).to eq(object)
+          end
+
+
+          it "defines instance method 'fetch_model' step to fetch object from model_class into result key using default arguments when none specified" do
+            expect(MyModel).to receive(:first).with(email: key).and_return(object)
+
             expect(operation.fetch_model(input: {email: key}).value[:my_model]).to eq(object)
           end
 
