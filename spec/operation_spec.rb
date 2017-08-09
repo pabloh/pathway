@@ -5,7 +5,6 @@ module Pathway
     class SimpleOperation < Operation
       plugin :dry_validation
       plugin :authorization
-      plugin :responder
 
       context :user, :repository
 
@@ -158,39 +157,6 @@ module Pathway
       it "defines an 'authorized?' method using provided block", :aggregate_failures do
         expect(operation_class.new(role: :admin)).to be_authorized
         expect(operation_class.new(role: :clerk)).not_to be_authorized
-      end
-    end
-
-    describe ".call" do
-      let(:ctx)    { { user: double("User", role: :root), repository: double("Repo") } }
-      let(:params) { { name: "Paul Smith", email: "psmith@email.com" } }
-      before { allow(ctx[:repository]).to receive(:fetch).and_return(double) }
-
-      context "when no block is given" do
-        let(:result) { SimpleOperation.(ctx, params) }
-
-        it "instances an operation an executes 'call'", :aggregate_failures do
-          expect(result).to be_kind_of(Pathway::Result)
-          expect(result.value).to be_kind_of(SimpleModel)
-          expect(result.value.to_h).to match(**params, role: ctx[:user].role, profile: anything)
-        end
-      end
-
-      context "when a block is given" do
-        let(:responder) { class_double("Pathway::Responder").as_stubbed_const }
-
-        it "expected to invoke responder with the operation result and passed block" do
-          expect(responder).to receive(:respond) do |result, &block|
-            expect(result).to be_a(Pathway::Result)
-            expect(block).to be_a(Proc)
-          end
-
-          SimpleOperation.(ctx, params) do
-            success { |value| value.name }
-            failure { |error| "Invalid: " + error.join(", ") }
-          end
-
-        end
       end
     end
 
