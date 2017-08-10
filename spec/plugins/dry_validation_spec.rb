@@ -36,6 +36,22 @@ module Pathway
         required(:age).filled(:int?)
       end
 
+      class OperationWithOpt < Operation
+        plugin :dry_validation
+
+        context :quz
+
+        form do
+          configure { option :quz }
+
+          required(:qux).filled(eql?: quz)
+        end
+
+        process do
+          step :validate, with: :quz
+        end
+      end
+
       describe ".form_class" do
         subject(:operation_class) { Class.new(Operation) { plugin :dry_validation } }
 
@@ -54,22 +70,7 @@ module Pathway
       end
 
       describe ".build_form" do
-        subject(:operation_class) do
-          Class.new(Operation) do
-            plugin :dry_validation
-
-            form do
-              configure do
-                option :quz
-                define_method(:quz?) { |val| val == quz }
-              end
-
-              required(:qux).value(:quz?)
-            end
-          end
-        end
-
-        let(:form) { operation_class.build_form(quz: "XXX") }
+        let(:form) { OperationWithOpt.build_form(quz: "XXX") }
 
         it "uses passed the option from the context to the form" do
           expect(form.call(qux: "XXX")).to be_a_success
@@ -170,6 +171,15 @@ module Pathway
             expect(result).to be_a_failure
             expect(result.error.type).to eq(:validation)
             expect(result.error.details).to eq(name: ['is missing'])
+          end
+        end
+
+        context "when form requires an option for validation" do
+          subject(:operation) { OperationWithOpt.new(quz: 'FOO') }
+
+          it "sets it with the value provided on validate :with argument" do
+            expect(operation.call(qux: 'FOO')).to be_a_success
+            expect(operation.call(qux: 'OTHER')).to be_a_failure
           end
         end
       end
