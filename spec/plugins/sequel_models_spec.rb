@@ -124,12 +124,12 @@ module Pathway
             expect(result.value).to be(existing_model)
           end
 
-          context "but rewrite: option in step is true" do
+          context "but overwrite: option in step is true" do
             class RewOperation < CtxOperation
               context my_model: nil
 
               process do
-                step :fetch_model, rewrite: true
+                step :fetch_model, overwrite: true
               end
             end
 
