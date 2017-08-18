@@ -9,23 +9,33 @@ module Pathway
       class MyOperation < Operation
         plugin :sequel_models
 
+        context mailer: nil
+
         include Finder[MyModel, by: :email]
 
         process do
           transaction do
             step :fetch_model
+            after_commit do
+              step :send_emails
+            end
           end
+        end
+
+        def send_emails(my_model:,**)
+          @mailer.send_emails(my_model) if @mailer
         end
       end
 
-      let(:operation) { MyOperation.new }
+      let(:mailer) { double.tap { |d| allow(d).to receive(:send_emails) } }
+      let(:operation) { MyOperation.new(mailer: mailer) }
 
       describe "DSL" do
-        describe "#transaction" do
-          let(:result) { operation.call(params) }
-          let(:params) { { email: 'asd@fgh.net' } }
-          let(:model)  { double }
+        let(:result) { operation.call(params) }
+        let(:params) { { email: 'asd@fgh.net' } }
+        let(:model)  { double }
 
+        describe "#transaction" do
           it "returns the result state provided by the inner transaction when successful" do
             allow(MyModel).to receive(:first).with(params).and_return(model)
 
@@ -34,8 +44,26 @@ module Pathway
           end
 
           it "returns the error state provided by the inner transaction when there's a failure" do
+            allow(MyModel).to receive(:first).with(params).and_return(nil)
+
             expect(result).to be_a_failure
             expect(result.error.type).to eq(:not_found)
+          end
+        end
+
+        describe "#after_commit" do
+          it "calls after_commit block when transaction is successful" do
+            allow(MyModel).to receive(:first).with(params).and_return(model)
+            expect(mailer).to receive(:send_emails).with(model)
+
+            expect(result).to be_a_success
+          end
+
+          it "does not call after_commit block when transaction fails" do
+            allow(MyModel).to receive(:first).with(params).and_return(nil)
+
+            expect(mailer).to_not receive(:send_emails)
+            expect(result).to be_a_failure
           end
         end
       end

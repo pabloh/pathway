@@ -11,6 +11,14 @@ module Pathway
             end
           }, &bl)
         end
+
+        def after_commit(&bl)
+          sequence(-> seq, _ {
+            db.after_commit do
+              seq.call
+            end
+          }, &bl)
+        end
       end
 
       module InstanceMethods
