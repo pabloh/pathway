@@ -42,13 +42,29 @@ module Pathway
         context :quz
 
         form do
-          configure { option :quz }
+          configure { option :foo }
 
-          required(:qux).filled(eql?: quz)
+          required(:qux).filled(eql?: foo)
         end
 
         process do
-          step :validate, with: :quz
+          step :validate, with: { foo: :quz }
+        end
+      end
+
+      class OperationWithAutoWire < Operation
+        plugin :dry_validation, auto_wire_options: true
+
+        context :baz
+
+        form do
+          configure { option :baz }
+
+          required(:qux).filled(eql?: baz)
+        end
+
+        process do
+          step :validate
         end
       end
 
@@ -70,10 +86,17 @@ module Pathway
       end
 
       describe ".build_form" do
-        let(:form) { OperationWithOpt.build_form(quz: "XXX") }
+        let(:form) { OperationWithOpt.build_form(foo: "XXXXX") }
 
         it "uses passed the option from the context to the form" do
-          expect(form.call(qux: "XXX")).to be_a_success
+          expect(form.call(qux: "XXXXX")).to be_a_success
+        end
+      end
+
+      describe ".form_options" do
+        it "returns the option names defined for the form" do
+          expect(SimpleOperation.form_options).to eq([])
+          expect(OperationWithOpt.form_options).to eq([:foo])
         end
       end
 
@@ -174,12 +197,21 @@ module Pathway
           end
         end
 
-        context "when form requires an option for validation" do
-          subject(:operation) { OperationWithOpt.new(quz: 'FOO') }
+        context "when form requires options for validation" do
+          subject(:operation) { OperationWithOpt.new(quz: 'XXXXX') }
 
-          it "sets it with the value provided on validate :with argument" do
-            expect(operation.call(qux: 'FOO')).to be_a_success
+          it "sets then passing a hash through the :with argument" do
+            expect(operation.call(qux: 'XXXXX')).to be_a_success
             expect(operation.call(qux: 'OTHER')).to be_a_failure
+          end
+
+          context "and is using auto_wire_options" do
+            subject(:operation) { OperationWithAutoWire.new(baz: 'XXXXX') }
+
+            it "sets the options directly from the context using the keys with the same name" do
+              expect(operation.call(qux: 'XXXXX')).to be_a_success
+              expect(operation.call(qux: 'OTHER')).to be_a_failure
+            end
           end
         end
       end

@@ -4,7 +4,8 @@ module Pathway
   module Plugins
     module DryValidation
       module ClassMethods
-        attr_reader :form_class
+        attr_reader :form_class, :form_options
+        attr_accessor :auto_wire_options
 
         def form(base = nil, **opts, &block)
           if block_given?
@@ -20,6 +21,7 @@ module Pathway
         def form_class= klass
           @builded_form = klass.options.empty? ? klass.new : nil
           @form_class = klass
+          @form_options = klass.options.keys
         end
 
         def build_form(opts = {})
@@ -29,6 +31,7 @@ module Pathway
         def inherited(subclass)
           super
           subclass.form_class = form_class
+          subclass.auto_wire_options = auto_wire_options
         end
 
         private
@@ -49,11 +52,14 @@ module Pathway
       module InstanceMethods
         extend Forwardable
 
-        delegate :build_form => 'self.class'
+        delegate %i[build_form form_options auto_wire_options] => 'self.class'
         alias :form :build_form
 
-        def validate(state, with: [])
-          opts = Array(with).map { |key| [key, state[key]] }.to_h
+        def validate(state, with: nil)
+          if auto_wire_options && form_options.any?
+            with ||= form_options.zip(form_options).to_h
+          end
+          opts = Hash(with).map { |opt, key| [opt, state[key]] }.to_h
           validate_with(state[:input], opts)
             .then { |params| state.update(params: params) }
         end
@@ -65,8 +71,9 @@ module Pathway
         end
       end
 
-      def self.apply(operation)
+      def self.apply(operation, auto_wire_options: false)
         operation.form_class = Dry::Validation::Schema::Form
+        operation.auto_wire_options = auto_wire_options
       end
     end
   end
