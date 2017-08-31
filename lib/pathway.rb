@@ -6,7 +6,7 @@ require 'pathway/result'
 
 module Pathway
   class Operation
-    def self.plugin(name)
+    def self.plugin(name, *args)
       require "pathway/plugins/#{Inflecto.underscore(name)}" if name.is_a?(Symbol)
 
       plugin = name.is_a?(Module) ? name : Plugins.const_get(Inflecto.camelize(name))
@@ -15,12 +15,12 @@ module Pathway
       self.include plugin::InstanceMethods if plugin.const_defined? :InstanceMethods
       self::DSL.include plugin::DSLMethods if plugin.const_defined? :DSLMethods
 
-      plugin.apply(self) if plugin.respond_to?(:apply)
+      plugin.apply(self, *args) if plugin.respond_to?(:apply)
     end
 
     def self.inherited(subclass)
-      subclass.const_set :DSL, Class.new(self::DSL)
       super
+      subclass.const_set :DSL, Class.new(self::DSL)
     end
 
     class DSL
