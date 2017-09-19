@@ -6,35 +6,38 @@ module Pathway
       class AuthOperation < Operation
         plugin :authorization
 
-        context :user, allow: false
+        context :user
 
-        authorization { |value| value == :RESULT && user.role == :admin }
+        authorization { user.role == :admin }
 
         process do
-          set  :fetch_value
           step :authorize
-        end
-
-        private
-
-        def fetch_value(**)
-          :RESULT
         end
       end
 
-      subject(:operation) { AuthOperation.new(context) }
+      class Auth2Operation < Operation
+        plugin :authorization
+
+        context value: :RESULT
+
+        authorization { |value| value == :RESULT }
+
+        process do
+          step :authorize
+        end
+      end
 
       describe "#authorize" do
-        let(:context) { { user: double(role: :admin) } }
+        subject(:operation) { Auth2Operation.new }
 
         context "with no options" do
-          it "uses authorization block and value to authorize", :aggregate_failures do
-            expect(operation.authorize(value: :RESULT)).to be_a_success
+          it "passes the current result to the authorization block to authorize", :aggregate_failures do
+            expect(operation.authorize({value: :RESULT})).to be_a_success
           end
         end
 
         context "with :using argument" do
-          it "uses authorization block and :using key to authorize", :aggregate_failures do
+          it "passes then value for :key from the context to the authorization block to authorize", :aggregate_failures do
             expect(operation.authorize({foo: :RESULT}, using: :foo)).to be_a_success
             expect(operation.authorize({foo: :ELSE}, using: :foo)).to be_a_failure
           end
@@ -42,22 +45,43 @@ module Pathway
       end
 
       describe "#call" do
-        let(:context) { { user: double(role: role) } }
         let(:result)  { operation.call({}) }
 
-        context "when calling with proper authorization" do
-          let(:role) { :admin }
-          it "returns a successful result", :aggregate_failures do
-            expect(result).to be_a_success
-            expect(result.value).to be(:RESULT)
+        context "when the authorization blocks expects no params" do
+          subject(:operation) { AuthOperation.new(context) }
+          let(:context) { { user: double(role: role) } }
+
+          context "and calling with proper authorization" do
+            let(:role) { :admin }
+            it "returns a successful result", :aggregate_failures do
+              expect(result).to be_a_success
+            end
+          end
+
+          context "and calling with without proper authorization" do
+            let(:role) { :user }
+            it "returns a failed result", :aggregate_failures do
+              expect(result).to be_a_failure
+              expect(result.error.type).to eq(:forbidden)
+            end
           end
         end
 
-        context "when calling with without proper authorization" do
-          let(:role) { :user }
-          it "returns a failed result", :aggregate_failures do
-            expect(result).to be_a_failure
-            expect(result.error.type).to eq(:forbidden)
+
+        context "when the authorization blocks expects params" do
+          context "and calling with proper authorization" do
+            subject(:operation) { Auth2Operation.new }
+            it "returns a successful result", :aggregate_failures do
+              expect(result).to be_a_success
+            end
+          end
+
+          context "and calling without proper authorization" do
+            subject(:operation) { Auth2Operation.new(value: :OTHER) }
+            it "returns a failed result", :aggregate_failures do
+              expect(result).to be_a_failure
+              expect(result.error.type).to eq(:forbidden)
+            end
           end
         end
       end
