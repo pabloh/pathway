@@ -3,7 +3,9 @@ module Pathway
     module Authorization
       module ClassMethods
         def authorization(&block)
-          define_method(:authorized?, &block)
+          define_method(:authorized?) do |*args|
+            instance_exec(*args, &block)
+          end
         end
       end
 

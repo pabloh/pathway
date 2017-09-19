@@ -45,7 +45,7 @@ module Pathway
         let(:context) { { user: double(role: role) } }
         let(:result)  { operation.call({}) }
 
-        context "when calling with proper auth" do
+        context "when calling with proper authorization" do
           let(:role) { :admin }
           it "returns a successful result", :aggregate_failures do
             expect(result).to be_a_success
