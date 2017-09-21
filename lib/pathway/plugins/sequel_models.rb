@@ -21,29 +21,28 @@ module Pathway
         end
       end
 
-      module InstanceMethods
-        module Finder
-          def self.[](model_class, by: :id)
-            Module.new do
-              include InstanceMethods
+      module ClassMethods
+        attr_accessor :model_class, :search_field
 
-              define_singleton_method :included do |klass|
-                klass.class_eval do
-                  result_at Inflecto.underscore(model_class.name.split('::').last).to_sym
-
-                  define_method(:model_class) { model_class }
-                  define_method(:field)       { by }
-                  define_method(:db)          { model_class.db }
-                end
-              end
-            end
-          end
+        def model(model_class, search_by: :id, set_result_key: true)
+          self.model_class  = model_class
+          self.search_field = search_by
+          self.result_key   = Inflecto.underscore(model_class.name.split('::').last).to_sym if set_result_key
         end
 
-        extend Forwardable
-        delegate %i[model_class db field] => 'self.class'
+        def inherited(subclass)
+          super
+          subclass.model_class  = model_class
+          subclass.search_field = search_field
+        end
+      end
 
-        def fetch_model(state, from: model_class, key: field, column: field, overwrite: false)
+      module InstanceMethods
+        extend Forwardable
+        delegate %i[model_class search_field] => 'self.class'
+        delegate :db => :model_class
+
+        def fetch_model(state, from: model_class, key: search_field, column: search_field, overwrite: false)
           if state[result_key].nil? || overwrite
             find_model_with(state[:input][key], from, column)
               .then { |model| state.update(result_key => model) }
@@ -56,9 +55,13 @@ module Pathway
           wrap(model_class.new(params))
         end
 
-        def find_model_with(key, dataset = model_class, column = field)
+        def find_model_with(key, dataset = model_class, column = search_field)
           wrap_if_present(dataset.first(column => key))
         end
+      end
+
+      def self.apply(operation, model: nil, **args)
+        operation.model(model, args) if model
       end
     end
   end
