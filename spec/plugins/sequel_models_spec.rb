@@ -11,7 +11,7 @@ module Pathway
 
         context mailer: nil
 
-        include Finder[MyModel, by: :email]
+        model MyModel, search_by: :email
 
         process do
           transaction do
@@ -68,36 +68,50 @@ module Pathway
         end
       end
 
-      context 'when Finder[] with a model class is included' do
-        it 'resets the :result_key using the model class name' do
+      describe '.model' do
+        it "sets the 'result_key' using the model class name" do
           expect(operation.result_key).to eq(:my_model)
         end
 
-        it "defines instance methods returning the config options", :aggregate_failures do
+        it "sets the 'model_class' using the first parameter" do
           expect(operation.model_class).to eq(MyModel)
-          expect(operation.field).to eq(:email)
-          expect(operation.db).to eq(DB)
         end
 
-        let(:key)    { "some@email.com" }
-        let(:params) { { foo: 3, bar: 4} }
-        let(:object) { double }
+        it "sets the 'search_field' with the option value" do
+          expect(operation.search_field).to eq(:email)
+        end
+      end
 
-        it "defines instance method 'find_model_with' to invoke model_class" do
+      describe '#db' do
+        it 'returns the current db form the model class'  do
+          expect(operation.db).to eq(DB)
+        end
+      end
+
+      let(:key)    { "some@email.com" }
+      let(:params) { { foo: 3, bar: 4} }
+
+      describe '#find_model_with' do
+        it "queries the db through the 'model_class'" do
           expect(MyModel).to receive(:first).with(email: key)
 
           operation.find_model_with(key)
         end
+      end
 
-        it "defines instance method 'build_model_with' to build model from model_class" do
+      describe '#build_model_with' do
+        it "creates a new model instance through the 'model_class'" do
           expect(MyModel).to receive(:new).with(params)
 
           operation.build_model_with(params)
         end
+      end
 
+      describe '#fetch_model' do
         let(:repository) { double }
+        let(:object) { double }
 
-        it "defines instance method 'fetch_model' step to fetch object from model_class into result key" do
+        it "fetches an instance through 'model_class' and sets result key" do
           expect(repository).to receive(:first).with(pk: 'foo').and_return(object)
           expect(MyModel).to_not receive(:first)
 
@@ -108,14 +122,13 @@ module Pathway
           expect(result).to eq(object)
         end
 
-
-        it "defines instance method 'fetch_model' step to fetch object from model_class into result key using default arguments when none specified" do
+        it "fetches an instance through 'model_class' into result key using default arguments if none specified" do
           expect(MyModel).to receive(:first).with(email: key).and_return(object)
 
           expect(operation.fetch_model(input: {email: key}).value[:my_model]).to eq(object)
         end
 
-        it "defines instance method 'fetch_model' to return error when object is missing", :aggregate_failures do
+        it 'returns an error when no instance is found', :aggregate_failures do
           allow(MyModel).to receive(:first).with(email: key).and_return(nil)
 
           expect(operation.fetch_model(input: {email: key})).to be_an(Result::Failure)
