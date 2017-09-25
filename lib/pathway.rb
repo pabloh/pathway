@@ -115,7 +115,7 @@ module Pathway
           failure Error.new(type: type, message: message, details: details)
         end
 
-        def wrap_if_present(value, type: :not_found, message: nil, details: [])
+        def wrap_if_present(value, type: :not_found, message: nil, details: {})
           value.nil? ? error(type, message: message, details: details) : success(value)
         end
       end
