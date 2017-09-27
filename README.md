@@ -28,25 +28,68 @@ Pathway helps you separate your business logic from the rest of your application
 The main concept Pathway relies upon to build domain logic modules is the operation, this important concept will be explained in detail in the following sections.
 
 
-Pathway also aims to be easy to use, be lightweight and modular, avoid unnecessary heavy dependencies, keep the stdlib clean from monkey patches and yield an organized and uniform codebase.
+Pathway also aims to be easy to use, stay lightweight and modular, avoid unnecessary heavy dependencies, keep the core classes clean from monkey patching and help yielding an organized and uniform codebase.
 
 ## Usage
 
 ### Core API and concepts
 
-As mentioned earlier the operation is a crucial concept Pathway leverages upon. Operations not only structures your codebase (into steps as will be explained later) but also express meaningful business actions. Operations can be thought as use cases too: they should express an activity -to be perform by an actor interacting with system- which should be understandable by anyone familiar with the business regardless of their technical expertise.
+As mentioned earlier the operation is a crucial concept Pathway leverages upon. Operations not only structure your code (using steps as will be explained latter) but also express meaningful business actions. Operations can be thought as use cases too: they represent an activity -to be perform by an actor interacting with the system- which should be understandable by anyone familiar with the business regardless of their technical expertise.
 
 
-Operations should ideally don't contain any business rules but instead orchestrate and delegate to other more specific subsystems and services. The only logic present then should be glue code and transformations that make iterations with the inner system layers possible.
+Operations should ideally don't contain any business rules but instead orchestrate and delegate to other more specific subsystems and services. The only logic present then should be glue code or any adaptations required to make iterations with the inner system layers possible.
 
 #### Function object protocol (the `call` method)
-#### Steps
-- Succesful
-- Failed
+
+Operations works as function objects, they are callable and hold no state, as such, any object that responds to `call` and returns a result object can be a valid operation and that's the minimal protocol they needs to follow.
+The result object must follow its own protocol as well (and a helper class is provided for that end) but we'll talk about that in a minute.
+
+Let's see an example:
+
+```ruby
+class MyFirstOperation
+  def call(params)
+    result = Repository.create(params)
+
+    if result.ok?
+      Pathway::Result.success(result)
+    else
+      Pathway::Result.failure('could not create')
+    end
+  end
+end
+
+result = MyFirstOperation.new.call(foo: 'foobar')
+if result.success?
+  puts result.value.inspect
+else
+  puts "Error: #{result.error}"
+end
+
+```
+
+Note first we are not inheriting from any class nor including any module. This won't be the case in general as `pathway` provides classes to help build your operations, but it serves to illustrate how little is needed to implement one.
+
+Let's ignore the specifics about `Repository.create(...)`, we just need to know that is a backend that's able to return some value.
+
+
+We now provide for our class a `call` implementation. It just need to check if the result is available and then wrap it into a successful `Result` object when is ok, or a failing one when is not.
+And that's it, you can then call the operation object, check whether it was completed correctly with `success?` and get the result value.
+
+By following this protocol, you will be able to uniformly use the same pattern on every HTTP endpoint (or whatever means your app has to communicates with the outside world). The upper layer of the application is now offloading all domain logic to the operation and now only needs to focus on the data transmission details. Maintaining always the same protocol will also be very useful when composing operations.
+
+
 #### Operation result
+- Successful
+- Failed
+
+#### Error objects
 #### Initialization and context
+#### Steps
+
+Finally the steps, these are the heart of the operation class and the reason you will want to inherit your own from `Pathway::Operation`.
+
 #### Execution process state
-#### Result value
 #### Alternative invocation syntaxes and pattern matching DSL
 
 ### Plugins
