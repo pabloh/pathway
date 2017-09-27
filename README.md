@@ -73,7 +73,7 @@ Note first we are not inheriting from any class nor including any module. This w
 Let's ignore the specifics about `Repository.create(...)`, we just need to know that is a backend that's able to return some value.
 
 
-We now provide for our class a `call` implementation. It just need to check if the result is available and then wrap it into a successful `Result` object when is ok, or a failing one when is not.
+We now provide for our class a `call` implementation. It will just check if the result is available and then wrap it into a successful `Result` object when is ok, or a failing one when is not.
 And that's it, you can then call the operation object, check whether it was completed correctly with `success?` and get the result value.
 
 By following this protocol, you will be able to uniformly use the same pattern on every HTTP endpoint (or whatever means your app has to communicates with the outside world). The upper layer of the application is now offloading all domain logic to the operation and now only needs to focus on the data transmission details. Maintaining always the same protocol will also be very useful when composing operations.
