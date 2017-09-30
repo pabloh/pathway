@@ -70,7 +70,7 @@ end
 
 Note first we are not inheriting from any class nor including any module. This won't be the case in general as `pathway` provides classes to help build your operations, but it serves to illustrate how little is needed to implement one.
 
-Let's ignore the specifics about `Repository.create(...)`, we just need to know that is a backend that's able to return some value.
+Also, let's ignore the specifics about `Repository.create(...)`, we just need to know that is a backend that's able to return some value.
 
 
 We now provide for our class a `call` implementation. It will just check if the result is available and then wrap it into a successful `Result` object when is ok, or a failing one when is not.
