@@ -4,7 +4,11 @@ module Pathway
   module Plugins
     describe 'SequelModels' do
       DB = Sequel.mock
-      MyModel = Class.new(Sequel::Model(DB[:foo]))
+      MyModel = Class.new(Sequel::Model(DB[:foo])) { set_primary_key :pk }
+
+      class PkOperation < Operation
+        plugin :sequel_models, model: MyModel
+      end
 
       class MyOperation < Operation
         plugin :sequel_models
@@ -77,8 +81,18 @@ module Pathway
           expect(operation.model_class).to eq(MyModel)
         end
 
-        it "sets the 'search_field' with the option value" do
-          expect(operation.search_field).to eq(:email)
+        context 'when a :search_field option is specified' do
+          it "sets the 'search_field' with the provided value" do
+            expect(operation.search_field).to eq(:email)
+          end
+        end
+
+        context 'when no :search_field option is specified' do
+          let(:operation) { PkOperation.new }
+
+          it "sets the 'search_field' from the model's pk " do
+            expect(operation.search_field).to eq(:pk)
+          end
         end
       end
 
@@ -166,7 +180,7 @@ module Pathway
           end
 
           context "but overwrite: option in step is true" do
-            class RewOperation < CtxOperation
+            class OwOperation < CtxOperation
               context my_model: nil
 
               process do
@@ -174,7 +188,7 @@ module Pathway
               end
             end
 
-            let(:operation) { RewOperation.new(ctx) }
+            let(:operation) { OwOperation.new(ctx) }
 
             it "fetches the model from the DB anyway" do
               expect(MyModel).to receive(:first).with(email: 'an@email.com').and_return(fetched_model)
