@@ -24,7 +24,7 @@ module Pathway
       module ClassMethods
         attr_accessor :model_class, :search_field
 
-        def model(model_class, search_by: :id, set_result_key: true)
+        def model(model_class, search_by: model_class.primary_key, set_result_key: true)
           self.model_class  = model_class
           self.search_field = search_by
           self.result_key   = Inflecto.underscore(model_class.name.split('::').last).to_sym if set_result_key
