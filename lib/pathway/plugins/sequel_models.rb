@@ -42,10 +42,10 @@ module Pathway
         delegate %i[model_class search_field] => 'self.class'
         delegate :db => :model_class
 
-        def fetch_model(state, from: model_class, key: search_field, column: search_field, overwrite: false)
-          if state[result_key].nil? || overwrite
-            find_model_with(state[:input][key], from, column)
-              .then { |model| state.update(result_key => model) }
+        def fetch_model(state, from: model_class, using: search_field, search_by: search_field, to: result_key, overwrite: false)
+          if state[to].nil? || overwrite
+            find_model_with(state[:input][using], from, search_by)
+              .then { |model| state.update(to => model) }
           else
             state
           end

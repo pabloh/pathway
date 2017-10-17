@@ -130,7 +130,7 @@ module Pathway
           expect(MyModel).to_not receive(:first)
 
           result = operation
-                     .fetch_model({input: {myid: 'foo'}}, from: repository, key: :myid, column: :pk)
+                     .fetch_model({input: {myid: 'foo'}}, from: repository, using: :myid, search_by: :pk)
                      .value[:my_model]
 
           expect(result).to eq(object)
