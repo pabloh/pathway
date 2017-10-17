@@ -60,8 +60,8 @@ module Pathway
               RespOperation.call(context, input) do
                 success              { |value| "Returning: " + value }
                 failure(:forbidden)  { |error| "Forbidden" }
-                failure(:validation) { |error| "Invalid: " + error.errors.join(", ") }
-                failure              { |error| "Other: " + error.errors.join(" ") }
+                failure(:validation) { |error| "Invalid: " + error.details.join(", ") }
+                failure              { |error| "Other: " + error.details.join(" ") }
               end
             end
 
