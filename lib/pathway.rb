@@ -33,10 +33,6 @@ module Pathway
 
     @default_messages = {}
 
-    alias :error_type :type
-    alias :error_message :message
-    alias :errors :details
-
     def initialize(type:, message: nil, details: nil)
       @type    = type.to_sym
       @message = message || default_message_for(type)
