@@ -48,8 +48,8 @@ Let's see an example:
 
 ```ruby
 class MyFirstOperation
-  def call(params)
-    result = Repository.create(params)
+  def call(input)
+    result = Repository.create(input)
 
     if result.valid?
       Pathway::Result.success(result)
@@ -85,9 +85,9 @@ Maintaining always the same operation protocol will also be very useful when com
 
 As should be evident by now an operation should always return either a successful or failed result. This concepts are represented by following a simple protocol, which `Pathway::Result` subclasses comply.
 
-As we seen before, by querying `success?` on the result we can see if the operation we just ran went well, you can also call to `failure?` for a negated version.
+As we seen before, by querying `success?` on the result we can see if the operation we just ran went well, or you can also call to `failure?` for a negated version.
 
-The actual result value produced by the operation is be accessible at the `value` method and the error description (if there's any) at `error` when the operation fails.
+The actual result value produced by the operation is accessible at the `value` method and the error description (if there's any) at `error` when the operation fails.
 
 To return wrapped values or errors from your operation you can must call to `Pathway::Result.success(value)` or `Pathway::Result.failure(error)`.
 
@@ -97,8 +97,8 @@ It is worth mentioning that when you inherit from `Pathway::Operation` you'll ha
 
 ```ruby
 class MyFirstOperation < Pathway::Operation
-  def call(params)
-    result = Repository.create(params)
+  def call(input)
+    result = Repository.create(input)
 
     result.valid? ? success(result) : failure(:create_error)
   end
@@ -106,6 +106,39 @@ end
 ```
 
 #### Error objects
+
+`Pathway::Error` is a helper class to represent the error description from an failed operation execution (and can be used also for pattern matching as we'll see later).
+It's use is completely optional, but provides you with a basic schema to communicate what when wrong. You can instantiate it by calling `new` on the class itself or using the helper method `error` provided in the operation class:
+
+```ruby
+class CreateNugget < Pathway::Operation
+  def call(input)
+    result = Form.call(input)
+
+    if result.valid?
+      success(Nugget.new(result.value))
+    else
+      error(type: :validation, message: 'Invalid input', details: result.errors)
+    end
+  end
+end
+```
+
+As you can see `error(...)` expects `type:`, `message:` and `details` keyword arguments; `type:` is the only mandatory, the other ones can be omitted and have default values. Also `type` should be a `Symbol`, `message:` a `String` and `details:` can be a `Hash` or any other structure you see fit.
+
+You then have assessors available on the error object to get the values back:
+
+```ruby
+result = CreateNugget.new.call(foo: 'foobar')
+if result.failure?
+  puts "#{result.error.type} error: #{result.error.message}"
+end
+
+```
+
+Mind you, `error(...)` creates an `Error` object wrapped into a `Pathway::Failure` so you don't have to do it yourself.
+If you decide to use `Pathway::Error.new(...)` directly, the expected arguments will be the same, but you will have to wrap the object before returning it.
+
 #### Initialization and context
 #### Steps
 
