@@ -34,7 +34,7 @@ Pathway also aims to be easy to use, stay lightweight and modular, avoid unneces
 
 ### Core API and concepts
 
-As mentioned earlier the operation is a crucial concept Pathway leverages upon. Operations not only structure your code (using steps as will be explained latter) but also express meaningful business actions. Operations can be thought as use cases too: they represent an activity -to be perform by an actor interacting with the system- which should be understandable by anyone familiar with the business regardless of their technical expertise.
+As mentioned earlier the operation is a crucial concept Pathway leverages upon. Operations not only structure your code (using steps as will be explained later) but also express meaningful business actions. Operations can be thought as use cases too: they represent an activity -to be perform by an actor interacting with the system- which should be understandable by anyone familiar with the business regardless of their technical expertise.
 
 
 Operations should ideally don't contain any business rules but instead orchestrate and delegate to other more specific subsystems and services. The only logic present then should be glue code or any adaptations required to make interactions with the inner system layers possible.
@@ -126,7 +126,7 @@ end
 
 As you can see `error(...)` expects `type:`, `message:` and `details` keyword arguments; `type:` is the only mandatory, the other ones can be omitted and have default values. Also `type` should be a `Symbol`, `message:` a `String` and `details:` can be a `Hash` or any other structure you see fit.
 
-You then have assessors available on the error object to get the values back:
+You then have accessors available on the error object to get the values back:
 
 ```ruby
 result = CreateNugget.new.call(foo: 'foobar')
@@ -139,12 +139,32 @@ end
 Mind you, `error(...)` creates an `Error` object wrapped into a `Pathway::Failure` so you don't have to do it yourself.
 If you decide to use `Pathway::Error.new(...)` directly, the expected arguments will be the same, but you will have to wrap the object before returning it.
 
-#### Initialization and context
+#### Initialization context
+
+
+
 #### Steps
 
 Finally the steps, these are the heart of the `Operation` class and the main reason you will want to inherit your own classes from `Pathway::Operation`.
 
-#### Execution process state
+##### Operation execution state
+
+As it may be evident by now, when using the steps DSL, every step method receives a structure representing the current execution state. This structure is similar to a `Hash` and responds to its key methods (`:[]`, `:[]=`, `:fetch`, `:store` and `:include?`). It also contains the value to be returned when the operation succeed (at the `:value` attribute by default and also available through the `result` method).
+
+When an operation is executed, before running the first step, an initial state is created by coping all the values from the initialization context. Note that these values can be replaced on later steps but it won't mutate the context object itself since is always frozen.
+
+
+A state object can be easily splatted on method definitions, in the same fashion as a `Hash`, in order to cherry pick the attributes we are interested for the current step:
+
+```ruby
+# ...
+  # This step only takes the values it needs to do its and doesn't change the state.
+  def send_emails(user:, report:, **)
+    ReportMailer.send_report(user.email, report)
+  end
+# ...
+```
+
 #### Alternative invocation syntaxes and pattern matching DSL
 
 ### Plugins
