@@ -116,7 +116,7 @@ class CreateNugget < Pathway::Operation
     result = Form.call(input)
 
     if result.valid?
-      success(Nugget.new(result.value))
+      success(Nugget.new(result.values))
     else
       error(type: :validation, message: 'Invalid input', details: result.errors)
     end
@@ -141,7 +141,38 @@ If you decide to use `Pathway::Error.new(...)` directly, the expected arguments 
 
 #### Initialization context
 
+It was previously mentioned that operations should work like functions, that is they don't hold state and you should be able to call the save instance all the times you need, on the other hand there will be some values that won't change during the operation life time and won't make sense as parameters, you can pass this values as context data on initialization.
 
+Context data can be thought as 'request data' on an HTTP endpoint, values that aren't global but won't change during the executing of the request. Examples of this kind of data are the current user, the current device the user is on, a CSRF token, other config parameters, etc. You will want to pass this values on initialization, and probably pass them along to other operations down the line.
+
+You can define your initializer to accept a `Hash` with this values, which is what every operation is expected to do, but as before when inheriting from `Operation` you have the helper method `context` handy to make it easier for you:
+
+```ruby
+class CreateNugget < Pathway::Operation
+  context :current_user, notify: false
+
+  def call(input)
+    result = Form.call(input)
+
+    if result.valid?
+      nugget = Nugget.new(owner: @current_user, **result.values)
+
+      Notifier.notify(:new_nugget, nugget) if @notify
+      success(nugget)
+    else
+      error(type: :validation, message: 'Invalid input', details: result.errors)
+    end
+  end
+end
+
+
+op = CreateNugget.new(current_user: user)
+op.call(foo: 'foobar')
+```
+
+In this example `context` is defining `:current_user` as a mandatory argument (it will raise an error if not provided) and `:notify` as an optional config argument, since it has a default value.
+
+Both of this parameters are available as instance variables inside the operation and, also there is a `context` private method you use to get all this values as frozen hash in order to pass then along easily.
 
 #### Steps
 
@@ -178,10 +209,6 @@ A state object can be easily splatted on method definitions, in the same fashion
 ### Testing tools
 #### Rspec config
 #### Rspec matchers
-
-## Best practices
-### Operation object design and organization
-### Testing recomendations
 
 ## Development
 
