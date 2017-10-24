@@ -141,11 +141,11 @@ If you decide to use `Pathway::Error.new(...)` directly, the expected arguments 
 
 #### Initialization context
 
-It was previously mentioned that operations should work like functions, that is they don't hold state and you should be able to call the save instance all the times you need, on the other hand there will be some values that won't change during the operation life time and won't make sense as parameters, you can pass this values as context data on initialization.
+It was previously mentioned that operations should work like functions, that is, they don't hold state and you should be able to execute the same instance all the times you need, on the other hand there will be some values that won't change during the operation life time and won't make sense to pass as `call` parameters, you can provide these values on initialization as context data.
 
-Context data can be thought as 'request data' on an HTTP endpoint, values that aren't global but won't change during the executing of the request. Examples of this kind of data are the current user, the current device the user is on, a CSRF token, other config parameters, etc. You will want to pass this values on initialization, and probably pass them along to other operations down the line.
+Context data can be thought as 'request data' on an HTTP endpoint, values that aren't global but won't change during the executing of the request. Examples of this kind of data are the current user, the current device, a CSRF token, other configuration parameters, etc. You will want to pass this values on initialization, and probably pass them along to other operations down the line.
 
-You can define your initializer to accept a `Hash` with this values, which is what every operation is expected to do, but as before when inheriting from `Operation` you have the helper method `context` handy to make it easier for you:
+You must define your initializer to accept a `Hash` with this values, which is what every operation is expected to do, but as before, when inheriting from `Operation` you have the helper method `context` handy to make it easier for you:
 
 ```ruby
 class CreateNugget < Pathway::Operation
@@ -170,9 +170,9 @@ op = CreateNugget.new(current_user: user)
 op.call(foo: 'foobar')
 ```
 
-In this example `context` is defining `:current_user` as a mandatory argument (it will raise an error if not provided) and `:notify` as an optional config argument, since it has a default value.
+On the example above `context` is defining `:current_user` as a mandatory argument (it will raise an error if not provided) and `:notify` as an optional config argument, since it has a default value. Note that any extra non-defined value provided will be simply ignored.
 
-Both of this parameters are available as instance variables inside the operation and, also there is a `context` private method you use to get all this values as frozen hash in order to pass then along easily.
+Both of these parameters are available through accessors (and instance variables) inside the operation. Also there is a `context` private method you use to get all the initialization values as a frozen hash, in order to pass then along easily.
 
 #### Steps
 
