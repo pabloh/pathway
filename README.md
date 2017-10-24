@@ -214,12 +214,13 @@ Mind you that a context must always be provided for this syntax, if you don't ne
 There's also third way to execute an operation, made available through a plugin, and will be explained later.
 
 ### Plugins
-#### Plugin architecture
 
-#### `SimpleAuth` plugin
 #### `DryValidation` plugin
 #### `SequelModels` plugin
+#### `SimpleAuth` plugin
 #### `Responder` plugin
+
+### Plugin architecture
 
 ### Testing tools
 #### Rspec config
