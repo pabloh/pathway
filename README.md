@@ -196,7 +196,22 @@ A state object can be easily splatted on method definitions, in the same fashion
 # ...
 ```
 
-#### Alternative invocation syntaxes and pattern matching DSL
+#### Alternative invocation syntax
+
+If you don't care about keeping the operation instance around you can execute the operation directly on the class. To do so, use `call` with the initialization context first and then the remaining parameters:
+
+```ruby
+user = User.first(session[:current_user_id])
+context = { current_user: user }
+
+CreateNugget.call(context, params[:nugget]) # Using 'call' on the class
+```
+
+Also you have Ruby's alternative syntax to invoke the `call` method: `CreateNugget.(context, params[:nugget])`. On any case you'll get the operation result like when invoking `call` on the operation's instance.
+
+Mind you that a context must always be provided for this syntax, if you don't need any initialization use an empty hash.
+
+There's also third way to execute an operation, made available through a plugin, and will be explained later.
 
 ### Plugins
 #### Plugin architecture
