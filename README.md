@@ -213,15 +213,15 @@ Lets start by showing some actual code:
 ```
 
 To define your `call` method using the DSL just call to `process` and pass a block, inside it the DSL will be available.
-Each `step` (or `set`) call is referring to a method inside the operation class, superclasses or available through a plugin, that will be eventually invoked.
-All of the steps constitute the operation use case and must follow a series of conventions in order to carry the process state along the execution process.
+Each `step` (or `set`) call is referring to a method inside the operation class, superclasses or available through a plugin, these methods will be eventually invoked on `call`.
+All of the steps constitute the operation use case and follow a series of conventions in order to carry the process state along the execution process.
 
-When you run the `call` method, the auto-generated code will save the provided argument at the `input` key within the execution state. Subsequent steps will receive this state and will be able to update it, setting the result value or communicating with the next steps on the execution path.
+When you run the `call` method, the auto-generated code will save the provided argument at the `input` key within the execution state. Subsequent steps will receive this state and will be able to update it, to set the result value or and auxiliary key to communicate with the next steps on the execution path.
 
 Each step (as the operation as whole) can succeed of fail, when the latter happens execution is halted, and the operation `call` method returns immediately.
-To signal a failure you must return with `failure` or `error` in the same fashion as when defining `call` directly.
+To signal a failure you must return a `failure(...)` or `error(...)` in the same fashion as when defining `call` directly.
 
-If you return `success(...)` or anything that's not a failure the execution carries on but the value is ignored. If you want to save the result value, you must use `set` instead of `step` at the process block, that will save your wrapped value, into the key provided at `to:`.
+If you return a `success(...)` or anything that's not a failure the execution carries on but the value is ignored. If you want to save the result value, you must use `set` instead of `step` at the process block, that will save your wrapped value, into the key provided at `to:`.
 Also non-failure return values inside steps are automatically wrapped so you can use `success` for clarity sake but it's optional.
 If you omit the `to:` keyword argument when defining a `set` step, the result key value will be used by default, but we'll explain more on that later.
 
@@ -268,7 +268,7 @@ class CreateNugget < Pathway::Operation
 
   result_at :nugget
 
-  def authorize(**)
+  def authorize(*)
     unless current_user.can? :create, Nugget
       error(:forbidden)
     end
@@ -284,7 +284,7 @@ class CreateNugget < Pathway::Operation
     end
   end
 
-  def create_nugget(:params,**)
+  def create_nugget(:params, **)
     Nugget.create(owner: current_user, **params)
   def
 
@@ -293,6 +293,19 @@ class CreateNugget < Pathway::Operation
   else
 end
 ```
+
+In the above example the operation will create nugget (whatever that is...). As you can see we are using the methods we mention before to indicate that we need a current user to be present `context: current_iser` on initialization, a `call` method to be defined `proccess do ... end`, and the result value should be stored at the `:nugget` key.
+
+Lets delve into the `process` block: it defines three steps using the `step` method and `create_nugget` using `set`, as we said before, this last step will set the result key (`:nugget`) since the `to:` keyword argument is absent.
+
+Now for each of the step methods:
+
+- `authorize` doesn't needs the state so just ignores it, then checks if the current user is allowed to perform the operation and halts the execution by returning a `:forbidden` error type if is not, otherwise does nothing and the execution goes.
+- `validate` gets the state as the argument, check for the validity of `input` which as we said is just the `call` method input, returns an `error` when there's a problem, but if the validation is correct it updates the state but saving the sanitized values in `:params`, note that the return value is just `state[:params]`, but since this method is specified using `step`, is ignored as before.
+- `create_nugget` first takes the `:params` key from the state (ignoring the other values), and calls create on the `Nugget` model with the sanitized params and the current user, the return value is saved to the result key (`:nugget` in this case) as the step is defined using `step` without using `to:`.
+- `notify`, grabs the `:nugget` from the state, and simply emits a notification with it, it has no meaningful return value, so is ignored.
+
+This example basically touches all the essential concepts needed when defining an operation class. If you can grasp it you already have a good understanding on how to implement one. There are still some very important bits to cover (like testing), and we'll tackle that on later sections.
 
 On a final note, you may be thinking that the code could be bit less verbose; also, shouldn't very common stuff like validation or authorization be simpler to use?; and maybe, why specify the result key?, is possible you could infer it from the surrounding code. We will address all these issues on the next section by using plugins, `pathway`'s extension mechanism.
 
