@@ -64,7 +64,6 @@ if result.success?
 else
   puts "Error: #{result.error}"
 end
-
 ```
 
 Note first we are not inheriting from any class nor including any module. This won't be the case in general as `pathway` provides classes to help build your operations, but it serves to illustrate how little is needed to implement one.
@@ -329,12 +328,33 @@ end
 ```
 
 The plugin name must be specified as a `Symbol` (or also as the `Module` where is implemented, but more on that later), and can it take parameters next to the plugin's name.
-When activated it will basically enrich your operations with new instance and class methods plus new customs step for the process DSL.
+When activated it will enrich your operations with new instance and class methods plus new customs step for the process DSL.
 
 Mind you, if you wish to activate a plugin for a number of operations you can activate it for all of them on the `Pathway::Operation` class, or you can create your own base operation and all its descendants will inherit the base class' plugins.
 
 #### `DryValidation` plugin
 #### `SimpleAuth` plugin
+
+This very simple plugin adds a custom step called `:authorize`, that can be used to check for permissions and halt the operation with a `:forbidden` error when they aren't fulfilled.
+
+In order to use it you must define a boolean predicate to check for permissions, by passing a block to the `authorization` method:
+
+```ruby
+class MyOperation < Pathway::Operation
+  plugin :simple_auth
+
+  context :current_user
+  authorization { current_user.is_admin? }
+
+  process do
+    step :authorize
+    step :perform_some_action
+  end
+
+  # ...
+end
+```
+
 #### `SequelModels` plugin
 #### `Responder` plugin
 
