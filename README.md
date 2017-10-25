@@ -311,6 +311,28 @@ On a final note, you may be thinking that the code could be bit less verbose; al
 
 ### Plugins
 
+Pathway has an extension mechanism based on plugins, very similar to the one found in [Roda](http://roda.jeremyevans.net/) or [Sequel](http://sequel.jeremyevans.net/). So if you are already familiar with any of those gems you shouldn't have a problem using `pathway`'s plugin system.
+
+In order to activate a plugin you must call the `plugin` method on the class:
+
+```ruby
+
+class BaseOperation < Pathway::Operation
+  plugin :foobar, qux: 'quz'
+end
+
+
+class SomeOperation < BaseOperation
+  # The :foobar plugin will also be activated here
+end
+
+```
+
+The plugin name must be specified as a `Symbol` (or also as the `Module` where is implemented, but more on that later), and can it take parameters next to the plugin's name.
+When activated it will basically enrich your operations with new instance and class methods plus new customs step for the process DSL.
+
+Mind you, if you wish to activate a plugin for a number of operations you can activate it for all of them on the `Pathway::Operation` class, or you can create your own base operation and all its descendants will inherit the base class' plugins.
+
 #### `DryValidation` plugin
 #### `SimpleAuth` plugin
 #### `SequelModels` plugin
