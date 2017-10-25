@@ -310,7 +310,7 @@ On a final note, you may be thinking that the code could be bit less verbose; al
 
 ### Plugins
 
-Pathway has an extension mechanism based on plugins, very similar to the one found in [Roda](http://roda.jeremyevans.net/) or [Sequel](http://sequel.jeremyevans.net/). So if you are already familiar with any of those gems you shouldn't have a problem using `pathway`'s plugin system.
+Pathway has an extension mechanism based on plugins, very similar to the one found in [Roda](http://roda.jeremyevans.net/) or [Sequel](http://sequel.jeremyevans.net/). So if you are already familiar with any of those gems you shouldn't have any problem using `pathway`'s plugin system.
 
 In order to activate a plugin you must call the `plugin` method on the class:
 
@@ -357,6 +357,38 @@ end
 
 #### `SequelModels` plugin
 #### `Responder` plugin
+
+This plugin extend the `call` class method on the operation in order to accept a block. You can then use this block for flow control on success and failure and to pattern match different type of errors.
+
+There are two way to use this plugin: by discriminating between success and failure, and when by also discriminating according to the specific failure reason.
+
+On each case you must provide the action to execute for every outcome using blocks:
+
+```ruby
+MyOperation.plugin :responder # 'plugin' is actually a public method
+
+MyOperation.(context, params) do
+  success { |value| r.halt(200, value.to_json) } # BTW: 'r.halt' is a Roda request method used to exemplify
+  failure { |error| r.halt(403) }
+end
+```
+
+On example above we provide a block for both the success and the failure case. On each block the result value or the error object error will be provided at the blocks' argument, the result of corresponding block will be the result of the whole expression.
+
+Lets now show an example with pattern matching:
+
+```ruby
+MyOperation.plugin :responder
+
+MyOperation.(context, params) do
+  success              { |value| r.halt(200, value.to_json) }
+  failure(:forbidden)  { |error| r.halt(403) }
+  failure(:validation) { |error| r.halt(422, error.details.to_json) }
+  failure(:not_found)  { |error| r.halt(404) }
+end
+```
+
+As you can see is almost identical as the previous example only that this time you provide the error type on each `failure` call.
 
 ### Plugin architecture
 
