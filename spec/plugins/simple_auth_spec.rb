@@ -2,9 +2,9 @@ require 'spec_helper'
 
 module Pathway
   module Plugins
-    describe 'Authorization' do
+    describe 'SimpleAuth' do
       class AuthOperation < Operation
-        plugin :authorization
+        plugin :simple_auth
 
         context :user
 
@@ -16,7 +16,7 @@ module Pathway
       end
 
       class Auth2Operation < Operation
-        plugin :authorization
+        plugin :simple_auth
 
         context value: :RESULT
 
