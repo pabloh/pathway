@@ -294,16 +294,16 @@ class CreateNugget < Pathway::Operation
 end
 ```
 
-In the above example the operation will create nugget (whatever that is...). As you can see we are using the methods we mention before to indicate that we need a current user to be present `context: current_iser` on initialization, a `call` method to be defined `proccess do ... end`, and the result value should be stored at the `:nugget` key.
+In the above example the operation will create nugget (whatever that is...). As you can see we are using the methods we mention before to indicate that we need a current user to be present `context: current_user` on initialization, a `call` method to be defined `process do ... end`, and the result value should be stored at the `:nugget` key.
 
 Lets delve into the `process` block: it defines three steps using the `step` method and `create_nugget` using `set`, as we said before, this last step will set the result key (`:nugget`) since the `to:` keyword argument is absent.
 
-Now for each of the step methods:
+Now, for each of the step methods:
 
-- `authorize` doesn't needs the state so just ignores it, then checks if the current user is allowed to perform the operation and halts the execution by returning a `:forbidden` error type if is not, otherwise does nothing and the execution goes on.
-- `validate` gets the state, checks the validity of the `:input` value which as we said is just the `call` method input, returns an `error(...)` when there's a problem, and if the validation is correct it updates the state but saving the sanitized values in `:params`. Note that the return value is just `state[:params]`, but since this method is specified using `step`, is ignored as the former step.
-- `create_nugget` first takes the `:params` attribute from the state (ignoring everything else), and calls `create` on the `Nugget` model with the sanitized params and the current user. The return value is saved to the result key (`:nugget` in this case) as the step is defined using `step` without `to:`.
-- `notify` grabs the `:nugget` from the state, and simply emits a notification with it, it has no meaningful return value, so is ignored.
+- `:authorize` doesn't needs the state so just ignores it, then checks if the current user is allowed to perform the operation and halts the execution by returning a `:forbidden` error type if is not, otherwise does nothing and the execution goes on.
+- `:validate` gets the state, checks the validity of the `:input` value which as we said is just the `call` method input, returns an `error(...)` when there's a problem, and if the validation is correct it updates the state but saving the sanitized values in `:params`. Note that the return value is `state[:params]`, but is ignored like the last one, since this method is specified using `step`.
+- `:create_nugget` first takes the `:params` attribute from the state (ignoring everything else), and calls `create` on the `Nugget` model with the sanitized params and the current user. The return value is saved to the result key (`:nugget` in this case) as the step is defined using `step` without `to:`.
+- `:notify` grabs the `:nugget` from the state, and simply emits a notification with it, it has no meaningful return value, so is ignored.
 
 This example basically touches all the essential concepts needed for defining an operation class. If you can grasp it you already have a good understanding on how to implement one. There are still some very important bits to cover (like testing), and we'll tackle that on later sections.
 
