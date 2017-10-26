@@ -310,12 +310,11 @@ On a final note, you may be thinking that the code could be bit less verbose; al
 
 ### Plugins
 
-Pathway has an extension mechanism based on plugins, very similar to the one found in [Roda](http://roda.jeremyevans.net/) or [Sequel](http://sequel.jeremyevans.net/). So if you are already familiar with any of those gems you shouldn't have any problem using `pathway`'s plugin system.
+Pathway can be extended by the use of plugins. They are very similar to the one found in [Roda](http://roda.jeremyevans.net/) or [Sequel](http://sequel.jeremyevans.net/). So if you are already familiar with any of those gems you shouldn't have any problem using `pathway`'s plugin system.
 
 In order to activate a plugin you must call the `plugin` method on the class:
 
 ```ruby
-
 class BaseOperation < Pathway::Operation
   plugin :foobar, qux: 'quz'
 end
@@ -324,15 +323,123 @@ end
 class SomeOperation < BaseOperation
   # The :foobar plugin will also be activated here
 end
-
 ```
 
 The plugin name must be specified as a `Symbol` (or also as the `Module` where is implemented, but more on that later), and can it take parameters next to the plugin's name.
 When activated it will enrich your operations with new instance and class methods plus new customs step for the process DSL.
 
-Mind you, if you wish to activate a plugin for a number of operations you can activate it for all of them on the `Pathway::Operation` class, or you can create your own base operation and all its descendants will inherit the base class' plugins.
+Mind you, if you wish to activate a plugin for a number of operations you can activate it for all of them directly on the `Pathway::Operation` class, or you can create your own base operation and all its descendants will inherit the base class' plugins.
 
 #### `DryValidation` plugin
+
+This plugin provides integration with the [dry-validation](http://dry-rb.org/gems/dry-validation/) gem. I won't explain in detail how to use this library since is already extensively documented on its official website, but instead I'll assume certain knowledge of it, nonetheless, as you'll see in a moment, its API pretty self-explanatory.
+
+`dry-validation` provides a very simple way to define form (or schema) objects to process and validate our input. The provided custom `:validate` step allows you to run your input though a form to check your data is valid before continuing. When the input is invalid it will return an error object with type `:validation` and the reasons the validation failed on the `details` attribute. Is commonly the first step any operation runs.
+
+When using this plugin we'll have to provide an already defined form to the step to use or we can also define one inline.
+Let's see a few examples:
+
+```ruby
+NuggetForm = Dry::Validation.Form do
+  required(:owner).filled(:str?)
+  required(:price).filled(:int?)
+end
+
+class CreateNugget < Pathway::Operation
+  plugin :dry_validation
+
+  form NuggetForm
+
+  process do
+    step :validate
+    step :create_nugget
+  end
+
+  # ...
+end
+```
+
+As it can be seen at the code above, the form is first defined elsewhere, and the operation can be set up to use it by calling `form NuggetForm`, and use validate the input at the process block by calling `step :validate`.
+
+```ruby
+class CreateNugget < Pathway::Operation
+  plugin :dry_validation
+
+  form do
+    required(:owner).filled(:str?)
+    required(:price).filled(:int?)
+  end
+
+  process do
+    step :validate
+    step :create_nugget
+  end
+
+  # ...
+end
+```
+
+On second other example is equivalent to the first one but here we call the `form` method a block instead and no parameter; this block will be use as definition body for a form that will be stored internally. This way allows you to keep the form and operation at the same place provided you have a rather simpler form and don't need to reuse it.
+
+One interesting nuance to keep in mind when using the inline block form is that, when using inheritance, if the parent operation already has a form, the child operation will define a new form extending from the parent's one. This is very useful to share functionality among related operations in the same class hierarchy.
+
+##### Form options
+
+If you are familiar with `dry-validation` you probably know it provides a way to [inject options](http://dry-rb.org/gems/dry-validation/basics/working-with-schemas/#injecting-external-dependencies) before calling the form instance.
+
+For those scenarios you can either use the `auto_wire_options: true` plugin argument, or specify how to map options from the execution state when calling `step`.
+Lets see and example for each case:
+
+```ruby
+class CreateNugget < Pathway::Operation
+  plugin :dry_validation, auto_wire_options: true
+
+  context :user_name
+
+  form do
+    configure { options :user_name }
+
+    required(:owner).filled(:str?, :eql?: user_name)
+    required(:price).filled(:int?)
+  end
+
+  process do
+    step :validate
+    step :create_nugget
+  end
+
+  # ...
+end
+```
+
+Here we see that the form needs a `:user_name` option so we tell the operation to grab the attribute with the same name from the execution state, afterwards, when the validation runs, it will already have the user name available.
+
+Mind you, this option is `false` by default, so be sure to activate it at `Pathway::Operation` if you'd rather have it on all your operations.
+
+```ruby
+class CreateNugget < Pathway::Operation
+  plugin :dry_validation, auto_wire_options: true
+
+  context :current_user_name
+
+  form do
+    configure { options :user_name }
+
+    required(:owner).filled(:str?, :eql?: user_name)
+    required(:price).filled(:int?)
+  end
+
+  process do
+    step :validate, with: { user_name: :current_user_name }
+    step :create_nugget
+  end
+
+  # ...
+end
+```
+
+On the other hand, if for some reason the name of the form's option and state attribute don't match, we can just pass `with: {...}` when calling to `step :validate`, indicating how to wire the attributes. The `with:` parameter can always be specified and it allows you to override the default behavior regardless if auto-wiring is activated or not.
+
 #### `SimpleAuth` plugin
 
 This very simple plugin adds a custom step called `:authorize`, that can be used to check for permissions and halt the operation with a `:forbidden` error when they aren't fulfilled.
