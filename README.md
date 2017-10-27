@@ -465,6 +465,85 @@ end
 ```
 
 #### `SequelModels` plugin
+
+The `sequel_models` plugin helps integrating operations with the [Sequel](http://sequel.jeremyevans.net/) ORM, by adding a few custom steps.
+
+This plugin expects you to be using `Sequel` model classes to access your DB. In order to exploit it, you need to indicate which model your operation is going to work with, hence you must specify said model when activating the plugin with the `model:` keyword argument, or later using the `model` class method.
+This configuration will then be used on the operation class and all its descendants.
+
+```ruby
+class MyOperation < Pathway::Operation
+  plugin :sequel_models, model: Nugget, search_by: :name, set_result_key: false
+end
+
+# Or...
+
+class MyOperation < Pathway::Operation
+  plugin :sequel_models
+
+  # This is useful when using inheritance and you need different models per operation
+  model Nugget, search_by: :name, set_result_key: false
+
+  process do
+    step :authorize
+    step :perform_some_action
+  end
+end
+
+```
+
+As you can see above you can also customize the search field (`:search_by`) and indicate if you want to override the result key (`:set_result_key`) when calling to `model`.
+These two options aren't mandatory, and by default pathway will set the search field to the class model primary key, and override the result key to a snake cased version of the model name (ignoring namespaces if contained inside a class or module).
+
+Let's now take a look at the provided steps.
+
+##### `:fetch_model` step
+
+This step will fetch a model from the DB, by extracting the search field from the `call` method input parameter stored at `:input` in the execution state. If the model cannot be fetched from the DB it will halt the execution with a `:not_found` error, otherwise it will simply save the model into the result key (which will be `:nugget` for the example below).
+You can latter access the fetched model from that attribute and if the operation finish successfuly, it will be the operation result.
+
+```ruby
+class UpdateNugget < Pathway::Operation
+  plugin :sequel_models, model: Nugget
+
+  process do
+    step :validate
+    step :fetch_model
+    step :fetch_model, from: User, with: :user_id, search_by: :pk, to: :user # Even the default class can also be overrided with 'from:'
+    step :update_nugget
+  end
+
+  # ...
+end
+```
+
+As a side note, and as you can see at the 3rd step, `:fetch_model` allows you to override the search column (`search_by:`), the input parameter to extract from `input` (`with:`), the attribute to store the result (`to:`) and even the default search class (`from:`). If the current defaults doesn't fit your needs and you'll have these options available. When, for instance, if you need some extra object to execute your operation.
+
+##### `:transaction` and `after_commit` steps
+
+These two steps are bit special since they take a block as an argument within which you can define more steps. With that in mind the only thing this plugin does is just surround your steps within `SequelDB.transaction do ... end` and `SequelDB.after_commit do ... end` callbacks. When using transaction it will start a new savepoint, in case you are already inside a transaction in order to properly notify that a transaction failed by returning an error object if that happens.
+
+```ruby
+class CreateNugget < Pathway::Operation
+  plugin :sequel_models, model: Nugget
+
+  process do
+    step :validate
+    transaction do
+      step :create_nugget
+      step :attach_history_note
+      after_commit do
+        step :send_emails
+      end
+    end
+  end
+
+  # ...
+end
+```
+
+When won't get into the details for each step here, but the important thing to gather is that `:create_nugget` and `:attach_history_note` will exists withing a single transaction and `send_mails` (and any steps you add in the `after_commit` block) will only run after the transaction has finish successfuly.
+
 #### `Responder` plugin
 
 This plugin extend the `call` class method on the operation in order to accept a block. You can then use this block for flow control on success and failure and to pattern match different type of errors.
@@ -498,12 +577,6 @@ end
 ```
 
 As you can see is almost identical as the previous example only that this time you provide the error type on each `failure` call.
-
-### Plugin architecture
-
-### Testing tools
-#### Rspec config
-#### Rspec matchers
 
 ## Development
 
