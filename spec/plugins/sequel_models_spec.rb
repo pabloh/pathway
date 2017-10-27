@@ -113,14 +113,6 @@ module Pathway
         end
       end
 
-      describe '#build_model_with' do
-        it "creates a new model instance through the 'model_class'" do
-          expect(MyModel).to receive(:new).with(params)
-
-          operation.build_model_with(params)
-        end
-      end
-
       describe '#fetch_model' do
         let(:repository) { double }
         let(:object) { double }

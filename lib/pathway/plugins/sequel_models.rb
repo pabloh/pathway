@@ -51,10 +51,6 @@ module Pathway
           end
         end
 
-        def build_model_with(params)
-          wrap(model_class.new(params))
-        end
-
         def find_model_with(key, dataset = model_class, column = search_field)
           wrap_if_present(dataset.first(column => key))
         end
