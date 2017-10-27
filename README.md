@@ -379,15 +379,15 @@ class CreateNugget < Pathway::Operation
 end
 ```
 
-On second other example is equivalent to the first one but here we call the `form` method a block instead and no parameter; this block will be use as definition body for a form that will be stored internally. This way allows you to keep the form and operation at the same place provided you have a rather simpler form and don't need to reuse it.
+This second example is equivalent to the first one, but here we call `form` a block instead and no parameter; this block will be use as definition body for a form object that will be stored internally. This way you to keep the form and operation at the same place, which is convenient when you have a rather simpler form and don't need to reuse it.
 
-One interesting nuance to keep in mind when using the inline block form is that, when using inheritance, if the parent operation already has a form, the child operation will define a new form extending from the parent's one. This is very useful to share functionality among related operations in the same class hierarchy.
+One interesting nuance to keep in mind regarding the inline block form is that, when doing operation inheritance, if the parent operation already has a form, the child operation will define a new one extending from the parent's. This is very useful to share form functionality among related operations in the same class hierarchy.
 
 ##### Form options
 
 If you are familiar with `dry-validation` you probably know it provides a way to [inject options](http://dry-rb.org/gems/dry-validation/basics/working-with-schemas/#injecting-external-dependencies) before calling the form instance.
 
-For those scenarios you can either use the `auto_wire_options: true` plugin argument, or specify how to map options from the execution state when calling `step`.
+On those scenarios you must either use the `auto_wire_options: true` plugin argument, or specify how to map options from the execution state to the form when calling `step :validate`.
 Lets see and example for each case:
 
 ```ruby
@@ -412,13 +412,13 @@ class CreateNugget < Pathway::Operation
 end
 ```
 
-Here we see that the form needs a `:user_name` option so we tell the operation to grab the attribute with the same name from the execution state, afterwards, when the validation runs, it will already have the user name available.
+Here we see that the form needs a `:user_name` option so we tell the operation to grab the attribute with the same name from the execution state by activating `:auto_wire_options`, afterwards, when the validation runs, the form will already have the user name available.
 
-Mind you, this option is `false` by default, so be sure to activate it at `Pathway::Operation` if you'd rather have it on all your operations.
+Mind you, this option is `false` by default, so be sure to set it to `true` at `Pathway::Operation` if you'd rather have it for all your operations.
 
 ```ruby
 class CreateNugget < Pathway::Operation
-  plugin :dry_validation, auto_wire_options: true
+  plugin :dry_validation
 
   context :current_user_name
 
@@ -430,7 +430,7 @@ class CreateNugget < Pathway::Operation
   end
 
   process do
-    step :validate, with: { user_name: :current_user_name }
+    step :validate, with: { user_name: :current_user_name } # Inject :user_name to the form object using :current_user_name
     step :create_nugget
   end
 
@@ -438,7 +438,9 @@ class CreateNugget < Pathway::Operation
 end
 ```
 
-On the other hand, if for some reason the name of the form's option and state attribute don't match, we can just pass `with: {...}` when calling to `step :validate`, indicating how to wire the attributes. The `with:` parameter can always be specified and it allows you to override the default behavior regardless if auto-wiring is activated or not.
+On the other hand, if for some reason the name of the form's option and state attribute don't match, we can just pass `with: {...}` when calling to `step :validate`, indicating how to wire the attributes, the example above illustrates just that.
+
+The `with:` parameter can always be specified, at `step :validate`, and allows you to override the default mapping regardless if auto-wiring is active or not.
 
 #### `SimpleAuth` plugin
 
