@@ -581,6 +581,12 @@ end
 
 As you can see is almost identical as the previous example only that this time you provide the error type on each `failure` call.
 
+### Plugin architecture
+
+### Testing tools
+#### Rspec config
+#### Rspec matchers
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
