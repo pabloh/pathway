@@ -3,7 +3,7 @@
 - Renamed `:authorization` plugin to `:simple_auth`
 
 ### Removed
-- Removed `build_model_with` method from `sequel_models` plugin
+- Removed `build_model_with` method from `:sequel_models` plugin
 
 ### Added
 - New documentation for core functionality and plugins
@@ -29,4 +29,4 @@
 
 ## [0.0.18] - 2017-10-08
 ### Changed
-- Changed `:sequel_models` default value of `search_by:` option from `:id` to the model's primary key
+- Changed `:sequel_models` default value for `search_by:` option from `:id` to the model's primary key
