@@ -489,13 +489,12 @@ class MyOperation < Pathway::Operation
     step :perform_some_action
   end
 end
-
 ```
 
 As you can see above you can also customize the search field (`:search_by`) and indicate if you want to override the result key (`:set_result_key`) when calling to `model`.
 These two options aren't mandatory, and by default pathway will set the search field to the class model primary key, and override the result key to a snake cased version of the model name (ignoring namespaces if contained inside a class or module).
 
-Let's now take a look at the provided steps.
+Let's now take a look at the provided extensions:
 
 ##### `:fetch_model` step
 
@@ -519,9 +518,11 @@ end
 
 As a side note, and as you can see at the 3rd step, `:fetch_model` allows you to override the search column (`search_by:`), the input parameter to extract from `input` (`with:`), the attribute to store the result (`to:`) and even the default search class (`from:`). If the current defaults doesn't fit your needs and you'll have these options available. When, for instance, if you need some extra object to execute your operation.
 
-##### `:transaction` and `after_commit` steps
+##### `transaction` and `after_commit`
 
-These two steps are bit special since they take a block as an argument within which you can define more steps. With that in mind the only thing this plugin does is just surround your steps within `SequelDB.transaction do ... end` and `SequelDB.after_commit do ... end` callbacks. When using transaction it will start a new savepoint, in case you are already inside a transaction in order to properly notify that a transaction failed by returning an error object if that happens.
+These two are bit special since they aren't actually custom steps but just new methods that extend the process DSL itself.
+These methods will take a block as an argument within which you can define inner steps.
+Keeping all that in mind the only thing `transaction` and `after_commit` really do is surround the inner steps with `SEQUEL_DB.transaction { ... }` and `SEQUEL_DB.after_commit { ... }` blocks, respectively.
 
 ```ruby
 class CreateNugget < Pathway::Operation
@@ -542,7 +543,9 @@ class CreateNugget < Pathway::Operation
 end
 ```
 
-When won't get into the details for each step here, but the important thing to gather is that `:create_nugget` and `:attach_history_note` will exists withing a single transaction and `send_mails` (and any steps you add in the `after_commit` block) will only run after the transaction has finish successfuly.
+When won't get into the details for each step in the example above, but the important thing to take away is that `:create_nugget` and `:attach_history_note` will exists withing a single transaction and `send_mails` (and any steps you add in the `after_commit` block) will only run after the transaction has finished successfuly.
+
+Another nuance to take into account is that calling `transaction` will start a new savepoint, since, in case you're already inside a transaction, it will be able to properly notify that the transaction failed by returning an error object when that happens.
 
 #### `Responder` plugin
 
