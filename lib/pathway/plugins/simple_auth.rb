@@ -1,6 +1,6 @@
 module Pathway
   module Plugins
-    module Authorization
+    module SimpleAuth
       module ClassMethods
         def authorization(&block)
           define_method(:authorized?) do |*args|
