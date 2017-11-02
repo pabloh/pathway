@@ -4,21 +4,9 @@
 [![CircleCI](https://circleci.com/gh/pabloh/pathway/tree/master.svg?style=shield)](https://circleci.com/gh/pabloh/pathway/tree/master)
 [![Coverage Status](https://coveralls.io/repos/github/pabloh/pathway/badge.svg?branch=master)](https://coveralls.io/github/pabloh/pathway?branch=master)
 
-Pathway allows you to encapsulate your app's business logic into operation objects (also known as application services on the DDD lingo).
+Pathway allows you to encapsulate your application business logic into operation objects (also known as application services on the DDD lingo).
 
 ## Installation
-
-Add this line to your application's Gemfile:
-
-```ruby
-gem 'pathway'
-```
-
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
 
     $ gem install pathway
 
@@ -32,7 +20,7 @@ Pathway also aims to be easy to use, stay lightweight and extensible (by the use
 
 ## Usage
 
-### Core API and concepts
+### Main concepts and API
 
 As mentioned earlier the operation is a crucial concept Pathway leverages upon. Operations not only structure your code (using steps as will be explained later) but also express meaningful business actions. Operations can be thought as use cases too: they represent an activity -to be perform by an actor interacting with the system- which should be understandable by anyone familiar with the business regardless of their technical expertise.
 
