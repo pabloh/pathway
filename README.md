@@ -4,17 +4,16 @@
 [![CircleCI](https://circleci.com/gh/pabloh/pathway/tree/master.svg?style=shield)](https://circleci.com/gh/pabloh/pathway/tree/master)
 [![Coverage Status](https://coveralls.io/repos/github/pabloh/pathway/badge.svg?branch=master)](https://coveralls.io/github/pabloh/pathway?branch=master)
 
-Pathway allows you to encapsulate your application business logic into operation objects (also known as application services on the DDD lingo).
+Pathway encapsulates your business logic into simple operation objects (AKA application services on the [DDD](https://en.wikipedia.org/wiki/Domain-driven_design) lingo).
 
 ## Installation
 
     $ gem install pathway
 
-## Introduction
+## Description
 
 Pathway helps you separate your business logic from the rest of your application; regardless if is an HTTP backend, a background processing daemon, etc.
-The main concept Pathway relies upon to build domain logic modules is the operation, this important concept will be explained in detail in the following sections.
-
+The main concept Pathway relies upon to build domain logic modules is the operation, this important concept will be explained in detail the following sections.
 
 Pathway also aims to be easy to use, stay lightweight and extensible (by the use of plugins), avoid unnecessary dependencies, keep the core classes clean from monkey patching and help yielding an organized and uniform codebase.
 

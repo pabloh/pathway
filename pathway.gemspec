@@ -9,8 +9,8 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Pablo Herrero"]
   spec.email         = ["pablodherrero@gmail.com"]
 
-  spec.summary       = %q{Define your bussines logic in simple steps.}
-  spec.description   = %q{Define your bussines logic in simple steps.}
+  spec.summary       = %q{Define your business logic in simple steps.}
+  spec.description   = %q{Define your business logic in simple steps.}
   #spec.homepage     = "TODO: Put your gem's website or public repo URL here."
   spec.license       = "MIT"
 
