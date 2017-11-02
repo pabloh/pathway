@@ -479,7 +479,7 @@ end
 ```
 
 As you can see above you can also customize the search field (`:search_by`) and indicate if you want to override the result key (`:set_result_key`) when calling to `model`.
-These two options aren't mandatory, and by default pathway will set the search field to the class model primary key, and override the result key to a snake cased version of the model name (ignoring namespaces if contained inside a class or module).
+These two options aren't mandatory, and by default Pathway will set the search field to the class model primary key, and override the result key to a snake cased version of the model name (ignoring namespaces if contained inside a class or module).
 
 Let's now take a look at the provided extensions:
 
@@ -569,6 +569,94 @@ end
 As you can see is almost identical as the previous example only that this time you provide the error type on each `failure` call.
 
 ### Plugin architecture
+
+Going a bit deeper now, we'll explain how to implement your own plugins. As was mention before `pathway` follows a very similar approach to the [Roda](http://roda.jeremyevans.net/) or [Sequel](http://sequel.jeremyevans.net/) plugin systems, which is reflected on its implementation.
+
+Each plugin must be defined in a file placed within the `pathway/plugins/` directory of your gem or application, so `pathway` can require the file; and must be implemented as a module inside the `Pathway::Plugins` namespace module. Inside your plugin module, three extra modules can be define to extend the operation API `ClassMethods`, `InstanceMethods` and `DSLMethods`; plus a class method `apply` for plugin initialization when needed.
+
+If you are familiar with the aforementioned plugin mechanism (or other as well), the function of each module is probably starting to feel evident: `ClassMethods` will be used to extend the operation class, so any class methods should be defined here; `InstanceMethods` will be included on the operation so all the instance methods you need to add to the operation should be here, this include every custom step you need to add; and finally `DSLMethods` will be included on the `Operation::DSL` class, which holds all the DSL methods like `step` or `set`.
+The `apply` method will simply be run whenever the plugin is included, taking the operation class on the first argument and all then arguments the call to `plugin` received (excluding the plugin name).
+
+Lets explain with more detail using a complete example:
+
+```ruby
+# lib/pathway/plugins/active_record.rb
+
+module Pathway
+  module Plugins
+    module ActiveRecord
+      module ClassMethods
+        attr_accessor :model, :pk
+
+        def inherited(subclass)
+          super
+          subclass.model = self.model
+          subclass.pk    = self.pk
+        end
+      end
+
+      module InstanceMethods
+        delegate :model, :pk, to: :class
+
+        # This plugin will conflict will :sequel_models so you mustn't load them in the same operation
+        def fetch_model(state, column: pk)
+          current_pk = state[:input][column]
+          result     = model.first(column => current_pk)
+
+          if result
+            state.update(result_key => result)
+          else
+            error(:not_found)
+          end
+        end
+      end
+
+      module DSLMethods
+        # This method also conflicts with :sequel_models, so don't use them as once.
+        def transaction(&steps)
+          transactional_seq = -> seq, _state do
+            ActiveRecord::Base.transaction do
+              seq.call
+            end
+          end
+
+          sequence(transactional_seq, &steps)
+        end
+      end
+
+      def self.apply(operation, model: nil, pk: nil)
+        operation.model = model
+        opertaion.pk    = pk || model&.primary_key
+      end
+    end
+  end
+end
+```
+
+The code above implements a plugin to provide basic interaction with the [ActiveRecord](http://guides.rubyonrails.org/active_record_basics.html) gem.
+Even though is a very simply plugin, it shows all the essentials to develop more complex plugin.
+
+First as is pointed out in the code, some of the methods implemented here (`fetch_model` and `transmission`) collide with methods defined for the `:sequel_models`, so as a consequence these two plugin's are not compatible with each other an cannot be activated at the same time on the same operation (although you can still do it for different operation within the same application).
+You must be mindful about colliding method names when mixing plugins, since `Pathway` can't book keep compatibility among every plugin that exists of will ever exist.
+Is a good practice to document known incompatibilities on the plugin definition itself when they are known.
+
+The whole plugin is completely defined within the `ActiveRecord` module inside the `Pathway::Plugins` namespace, also the file is placed at the load path in `pathway/plugin/active_record.rb` (assuming `lib/` is listed in `$LOAD_PATH`). This will ensure, when calling `plugin :active_record` inside an operation, the correct file will be loaded and the correct plugin module will be applied to the current operation.
+
+Moving on to the `ClassMethods` module, we can see the accessors `model` and `pk` are defined for the operation's class to allow configuration.
+Also, the `inherited` hook is defined, this will simply be another class method at the operation and as such will be executed normally when the operation class is inherited. In our implementation we just call to `super` (which is extremely important since other modules or parent classes could be using this hook), and then copy the `model` and `pk` options from the parent to the subclass in order to propagate the configuration downwards.
+
+At the end of the `ActiveRecord` module definition you can see the `apply` method. It will receive the operation class and the parameters passed when the `plugin` method is invoked. This method is usually used for loading dependencies of just setting up config parameters as we do in this particular example.
+
+`InstanceMethods` first defines a few delegator methods to the class itself to use later.
+Then the `fetch_model` step is defined (remember steps are but operation instance methods). Its first parameter is the state itself, as in the other steps we've seen before, and the remaining parameters are the options we can pass when calling `step :fetch_model` (mind you, this is also valid for steps defined in operations classes). Here we only take a single keyword argument: `column: pk`, with a default value; this will allow us to change the look up column when using the step, and is the only parameter we can use, passing other keyword arguments or extra positional parameters when invoking the step will raise errors.
+
+Let's now examine the `fetch_model` step body, is not really that much different from other steps, here we extract the model primary key from `state[:input][column]` and use it to perform a search. If nothing is found an error is returned, otherwise the state is updated on the result key to hold the model we just fetched from the DB.
+
+We finally see a `DSLMethods` module defined to extend the process DSL.
+For this plugin we'll define a way to group steps within an `ActiveRecord` transaction, much in the same way the `:sequel_models` plugin already does for `Sequel`.
+To this end we define a `transaction` method to expect a steps block and pass it down to the `sequence` helper below which expects a callable (like a `Proc`) and a step list block. As you can see the lambda we pass on the first parameter is the one that makes sure the steps are being run inside a transaction.
+
+The `sequence` method is a low level tool available to help extending the process DSL and it may seem a bit daunting at first glance but it usage is quite simple, the block is just a step list like the ones we find inside the `process` call; and the parameter is a callable (usually a lambda), that will take 2 arguments, an object from which we can run the step list by invoking `call` (and is the only thing it can do), and the current state. From here we can examine the state and decide upon whether to run the steps, how many times (if any) or run some code before and/or after doing so, like what we need to do in our example to surround the steps within a DB transaction.
 
 ### Testing tools
 
