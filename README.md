@@ -572,8 +572,92 @@ As you can see is almost identical as the previous example only that this time y
 ### Plugin architecture
 
 ### Testing tools
+
+As of right now only `rspec` is supported, that is, you can obviously test your operations with any framework you want, but all the provided matchers are designed for `rspec`.
+
 #### Rspec config
+
+In order to load Pathway's operation matchers you must add the following line to your `spec_helper.rb` file, after loading `rspec`:
+
+```ruby
+require 'pathway/rspec'
+```
+
 #### Rspec matchers
+
+Pathway provide a few matchers in order to tests your operation easier.
+Let's go through a full example and break it up in the following subsections:
+
+```ruby
+# create_nugget.rb
+
+class CreateNugget < Pathway::Operation
+  plugin :dry_validation
+
+  form do
+    required(:owner).filled(:str?)
+    required(:price).filled(:int?)
+    optional(:disabled).maybe(:bool?)
+  end
+
+  process do
+    step :validate
+    set  :create_nugget
+  end
+
+  def create_nugget(params:,**)
+    Nugget.create(params)
+  end
+end
+
+
+# create_nugget_spec.rb
+
+describe CreateNugget do
+  describe '#call' do
+    subject(:operation) { CreateNugget.new }
+
+    context 'when the input is valid' do
+      let(:input) { owner: 'John Smith', value: '11230' }
+
+      it { is_expected.to succeed_on(input).returning(an_instace_of(Nugget)) }
+    end
+
+    context 'when the input is invalid' do
+      let(:input) { owner: '', value: '11230' }
+
+      it { is_expected.to fail_on(input).
+             with_type(:validation).
+             message('Is not valid').
+             and_details(owner: ['must be present']) }
+    end
+  end
+
+  describe '.form' do
+    subject(:form) { CreateNugget.form }
+
+    it { is_expected.to require_fields(:owner, :price) }
+    it { is_expected.to accept_optional_field(:disabled) }
+  end
+end
+```
+
+##### `succeed_on` matcher
+
+This first matcher works on the operation itself and that's why could set `subject` with the operation instance and use `is_expected.to succeed_on(...)` on the example.
+The assertion it performs is simply is the operation was successful, also you can optionally chain `returning(...)` if you want to test the returning value, this method allows nesting matchers as is the case in the example.
+
+##### `fail_on` matcher
+
+This second matcher is analog to `succeed_on` but it asserts that operation execution was a failure instead. If you return an error object you can also assert the error type using the `type` chain method (aliased as `and_type` and `with_type`); the error message (`and_message`, `with_message` or `message`); and the error details (`and_details`, `with_details` or `details`). Mind you, the chain methods for the message and details accept nested matchers while the `type` chain can only test by equality.
+
+##### form matchers
+
+Finally we can see that we are also testing the operation's form, implemented here with the `dry-validation` gem.
+
+Two more matchers are provided when we use this gem: `require_fields` (aliased `require_field`) to test a form is expected to define a required set of fields, and `accept_optional_fields` (aliased `accept_optional_field`) to test an optional set of fields is defined for a form.
+
+These matchers are only useful when using `dry-validation` and will very likely be extracted to its own gem in the future.
 
 ## Development
 
