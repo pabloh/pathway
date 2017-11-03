@@ -643,18 +643,18 @@ end
 
 ##### `succeed_on` matcher
 
-This first matcher works on the operation itself and that's why could set `subject` with the operation instance and use `is_expected.to succeed_on(...)` on the example.
-The assertion it performs is simply is the operation was successful, also you can optionally chain `returning(...)` if you want to test the returning value, this method allows nesting matchers as is the case in the example.
+This first matcher works on the operation itself and that's why we could set `subject` with the operation instance and use `is_expected.to succeed_on(...)` on the example.
+The assertion it performs is simply is that the operation was successful, also you can optionally chain `returning(...)` if you want to test the returning value, this method allows nesting matchers as is the case in the example.
 
 ##### `fail_on` matcher
 
-This second matcher is analog to `succeed_on` but it asserts that operation execution was a failure instead. If you return an error object you can also assert the error type using the `type` chain method (aliased as `and_type` and `with_type`); the error message (`and_message`, `with_message` or `message`); and the error details (`and_details`, `with_details` or `details`). Mind you, the chain methods for the message and details accept nested matchers while the `type` chain can only test by equality.
+This second matcher is analog to `succeed_on` but it asserts that operation execution was a failure instead. Also if you return an error object, and you need to, you can assert the error type using the `type` chain method (aliased as `and_type` and `with_type`); the error message (`and_message`, `with_message` or `message`); and the error details (`and_details`, `with_details` or `details`). Mind you, the chain methods for the message and details accept nested matchers while the `type` chain can only test by equality.
 
 ##### form matchers
 
 Finally we can see that we are also testing the operation's form, implemented here with the `dry-validation` gem.
 
-Two more matchers are provided when we use this gem: `require_fields` (aliased `require_field`) to test a form is expected to define a required set of fields, and `accept_optional_fields` (aliased `accept_optional_field`) to test an optional set of fields is defined for a form.
+Two more matchers are provided when we use this gem: `require_fields` (aliased `require_field`) to test when form is expected to define a required set of fields, and `accept_optional_fields` (aliased `accept_optional_field`) to test when a form must define certain set of optional fields.
 
 These matchers are only useful when using `dry-validation` and will very likely be extracted to its own gem in the future.
 
