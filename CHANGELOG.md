@@ -1,3 +1,7 @@
+## [0.5.0] - 2017-11-6
+### Changed
+- Change base class for `Pathway::Error` from `StandardError` to `Object`
+
 ## [0.4.0] - 2017-10-31
 ### Changed
 - Renamed `:authorization` plugin to `:simple_auth`
