@@ -95,17 +95,14 @@ module Pathway
       module InstanceMethods
         extend Forwardable
 
-        def result_key
-          self.class.result_key
-        end
+        delegate :result_key => 'self.class'
+        delegate %i[result success failure] => Result
+
+        alias :wrap :result
 
         def call(*)
           fail "must implement at subclass"
         end
-
-        delegate %i[result success failure] => Result
-
-        alias :wrap :result
 
         def error(type, message: nil, details: nil)
           failure Error.new(type: type, message: message, details: details)
@@ -155,18 +152,18 @@ module Pathway
           @result = @result.then(bl)
         end
 
-        def sequence(with_seq, &bl)
+        def sequence(steps_wrapper, &steps)
           @result.then do |state|
-            seq = -> { @result = dup.run(&bl) }
-            _callable(with_seq).call(seq, state)
+            seq = -> { @result = dup.run(&steps) }
+            _callable(steps_wrapper).call(seq, state)
           end
         end
 
-        def guard(cond, &bl)
+        def guard(cond, &steps)
           cond = _callable(cond)
           sequence(-> seq, state {
             seq.call if cond.call(state)
-          }, &bl)
+          }, &steps)
         end
 
         private
