@@ -27,7 +27,7 @@ module Pathway
     end
   end
 
-  class Error < StandardError
+  class Error
     attr_reader :type, :message, :details
     singleton_class.send :attr_accessor, :default_messages
 
