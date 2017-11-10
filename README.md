@@ -616,7 +616,7 @@ module Pathway
         def transaction(&steps)
           transactional_seq = -> seq, _state do
             ActiveRecord::Base.transaction do
-              seq.call
+              raise ActiveRecord::Rollback if seq.call.failure?
             end
           end
 
@@ -654,7 +654,7 @@ Let's now examine the `fetch_model` step body, is not really that much different
 
 We finally see a `DSLMethods` module defined to extend the process DSL.
 For this plugin we'll define a way to group steps within an `ActiveRecord` transaction, much in the same way the `:sequel_models` plugin already does for `Sequel`.
-To this end we define a `transaction` method to expect a steps block and pass it down to the `sequence` helper below which expects a callable (like a `Proc`) and a step list block. As you can see the lambda we pass on the first parameter is the one that makes sure the steps are being run inside a transaction.
+To this end we define a `transaction` method to expect a steps block and pass it down to the `sequence` helper below which expects a callable (like a `Proc`) and a step list block. As you can see the lambda we pass on the first parameter is the one that makes sure the steps are being run inside a transaction and to abort the transaction if the intermediate result is a failure.
 
 The `sequence` method is a low level tool available to help extending the process DSL and it may seem a bit daunting at first glance but it usage is quite simple, the block is just a step list like the ones we find inside the `process` call; and the parameter is a callable (usually a lambda), that will take 2 arguments, an object from which we can run the step list by invoking `call` (and is the only thing it can do), and the current state. From here we can examine the state and decide upon whether to run the steps, how many times (if any) or run some code before and/or after doing so, like what we need to do in our example to surround the steps within a DB transaction.
 
