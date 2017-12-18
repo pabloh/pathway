@@ -117,29 +117,65 @@ module Pathway
         let(:repository) { double }
         let(:object) { double }
 
-        it "fetches an instance through 'model_class' and sets result key" do
-          expect(repository).to receive(:first).with(pk: 'foo').and_return(object)
-          expect(MyModel).to_not receive(:first)
-
-          result = operation
-                     .fetch_model({input: {myid: 'foo'}}, from: repository, using: :myid, search_by: :pk)
-                     .value[:my_model]
-
-          expect(result).to eq(object)
-        end
-
-        it "fetches an instance through 'model_class' into result key using default arguments if none specified" do
+        it "fetches an instance through 'model_class' into result key" do
           expect(MyModel).to receive(:first).with(email: key).and_return(object)
 
           expect(operation.fetch_model(input: {email: key}).value[:my_model]).to eq(object)
         end
 
-        it 'returns an error when no instance is found', :aggregate_failures do
-          allow(MyModel).to receive(:first).with(email: key).and_return(nil)
+        it "fetches an instance through 'model_class' and sets result key using an overrided search column, input key and repository when provdided" do
+          expect(repository).to receive(:first).with(pk: 'foo').and_return(object)
+          expect(MyModel).to_not receive(:first)
 
-          expect(operation.fetch_model(input: {email: key})).to be_an(Result::Failure)
-          expect(operation.fetch_model(input: {email: key}).error).to be_an(Pathway::Error)
-          expect(operation.fetch_model(input: {email: key}).error.type).to eq(:not_found)
+          state  = { input: { myid: 'foo' } }
+          result = operation
+                     .fetch_model(state, from: repository, using: :myid, search_by: :pk)
+                     .value[:my_model]
+
+          expect(result).to eq(object)
+        end
+
+
+        it "fetches an instance through 'model_class' and sets result key using an overrided search column and input key with only :search_by is provided" do
+          expect(MyModel).to receive(:first).with(name: 'foobar').and_return(object)
+
+          state  = { input: { email: 'other@email.com', name: 'foobar' } }
+          result = operation
+                     .fetch_model(state, search_by: :name)
+                     .value[:my_model]
+
+          expect(result).to eq(object)
+        end
+
+        it "fetches an instance through 'model_class' and sets result key using an overrided input key with but not search column when only :using is provided" do
+          expect(MyModel).to receive(:first).with(email: 'foobar@mail.com').and_return(object)
+
+          state  = { input: { email: 'other@email.com', first_email: 'foobar@mail.com' } }
+          result = operation
+                     .fetch_model(state, using: :first_email)
+                     .value[:my_model]
+
+          expect(result).to eq(object)
+        end
+
+        it 'returns an error when no instance is found', :aggregate_failures do
+          expect(MyModel).to receive(:first).with(email: key).and_return(nil)
+
+          result = operation.fetch_model(input: {email: key})
+
+          expect(result).to be_an(Result::Failure)
+          expect(result.error).to be_an(Pathway::Error)
+          expect(result.error.type).to eq(:not_found)
+        end
+
+        it 'returns an error without hitting the database when search key is nil', :aggregate_failures do
+          expect(MyModel).to_not receive(:first)
+
+          result = operation.fetch_model(input: {email: nil})
+
+          expect(result).to be_an(Result::Failure)
+          expect(result.error).to be_an(Pathway::Error)
+          expect(result.error.type).to eq(:not_found)
         end
       end
 
