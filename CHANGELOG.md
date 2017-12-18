@@ -1,3 +1,8 @@
+## [0.5.1] - 2017-12-18
+### Changed
+- Change behavior for `:fetch_model` step option `search_by:` to override both the search column and the input key (combine it with `using:` if you need a different value for the input key as well)
+- `:fetch_model` step will no longer hit the database if the input key is nil and just return a `:not_found` error instead
+
 ## [0.5.0] - 2017-11-6
 ### Changed
 - Change base class for `Pathway::Error` from `StandardError` to `Object`
@@ -20,7 +25,7 @@
 
 ## [0.0.20] - 2017-10-17
 ### Changed
-- Renamed options `key:` and `column:` to `using` and `search_by`, for `:fetch_model` step, at `:sequel_models` plugin
+- Renamed options `key:` and `column:` to `using:` and `search_by:`, for `:fetch_model` step, at `:sequel_models` plugin
 
 ### Added
 - Added new option `to:` for overriding where to store the result, for `:fetch_model` step, at `:sequel_models` plugin
