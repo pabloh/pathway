@@ -27,7 +27,7 @@ module Pathway
         def model(model_class, search_by: model_class.primary_key, set_result_key: true)
           self.model_class  = model_class
           self.search_field = search_by
-          self.result_key   = Inflecto.underscore(model_class.name.split('::').last).to_sym if set_result_key
+          self.result_key   = Inflector.underscore(Inflector.demodulize(model_class.name)).to_sym if set_result_key
         end
 
         def inherited(subclass)
