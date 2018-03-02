@@ -1,15 +1,16 @@
 require 'forwardable'
-require 'inflecto'
+require 'dry/inflector'
 require 'contextualizer'
 require 'pathway/version'
 require 'pathway/result'
 
 module Pathway
+  Inflector = Dry::Inflector.new
   class Operation
     def self.plugin(name, *args)
-      require "pathway/plugins/#{Inflecto.underscore(name)}" if name.is_a?(Symbol)
+      require "pathway/plugins/#{Inflector.underscore(name)}" if name.is_a?(Symbol)
 
-      plugin = name.is_a?(Module) ? name : Plugins.const_get(Inflecto.camelize(name))
+      plugin = name.is_a?(Module) ? name : Plugins.const_get(Inflector.camelize(name))
 
       self.extend plugin::ClassMethods if plugin.const_defined? :ClassMethods
       self.include plugin::InstanceMethods if plugin.const_defined? :InstanceMethods
@@ -42,7 +43,7 @@ module Pathway
     private
 
     def default_message_for(type)
-      self.class.default_messages[type] || Inflecto.humanize(type)
+      self.class.default_messages[type] || Inflector.humanize(type)
     end
   end
 
