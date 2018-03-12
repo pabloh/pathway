@@ -495,7 +495,7 @@ class UpdateNugget < Pathway::Operation
   process do
     step :validate
     step :fetch_model
-    step :fetch_model, from: User, with: :user_id, search_by: :pk, to: :user # Even the default class can also be overrided with 'from:'
+    step :fetch_model, from: User, using: :user_id, search_by: :pk, to: :user # Even the default class can also be overrided with 'from:'
     step :update_nugget
   end
 
@@ -503,7 +503,7 @@ class UpdateNugget < Pathway::Operation
 end
 ```
 
-As a side note, and as you can see at the 3rd step, `:fetch_model` allows you to override the search column (`search_by:`), the input parameter to extract from `input` (`with:`), the attribute to store the result (`to:`) and even the default search class (`from:`). If the current defaults doesn't fit your needs and you'll have these options available. When, for instance, if you need some extra object to execute your operation.
+As a side note, and as shown on the 3rd step, `:fetch_model` allows you to override the search column (`search_by:`), the input parameter to extract from `input` (`using:`), the attribute to store the result (`to:`) and even the default search class (`from:`). If the current defaults doesn't fit your needs and you'll have these options available. This is commonly usefuly when you need some extra object, besides the main one, to execute your operation.
 
 ##### `transaction` and `after_commit`
 
