@@ -114,7 +114,7 @@ module Pathway
       end
 
       describe '#fetch_model' do
-        let(:repository) { double }
+        let(:from_model) { double(name: 'Model') }
         let(:object) { double }
 
         it "fetches an instance through 'model_class' into result key" do
@@ -123,13 +123,13 @@ module Pathway
           expect(operation.fetch_model(input: {email: key}).value[:my_model]).to eq(object)
         end
 
-        it "fetches an instance through 'model_class' and sets result key using an overrided search column, input key and repository when provdided" do
-          expect(repository).to receive(:first).with(pk: 'foo').and_return(object)
+        it "fetches an instance through 'model_class' and sets result key using an overrided search column, input key and 'from' model when provided" do
+          expect(from_model).to receive(:first).with(pk: 'foo').and_return(object)
           expect(MyModel).to_not receive(:first)
 
           state  = { input: { myid: 'foo' } }
           result = operation
-                     .fetch_model(state, from: repository, using: :myid, search_by: :pk)
+                     .fetch_model(state, from: from_model, using: :myid, search_by: :pk)
                      .value[:my_model]
 
           expect(result).to eq(object)
@@ -166,6 +166,7 @@ module Pathway
           expect(result).to be_an(Result::Failure)
           expect(result.error).to be_an(Pathway::Error)
           expect(result.error.type).to eq(:not_found)
+          expect(result.error.message).to eq('My model not found')
         end
 
         it 'returns an error without hitting the database when search key is nil', :aggregate_failures do
@@ -176,6 +177,7 @@ module Pathway
           expect(result).to be_an(Result::Failure)
           expect(result.error).to be_an(Pathway::Error)
           expect(result.error.type).to eq(:not_found)
+          expect(result.error.message).to eq('My model not found')
         end
       end
 
