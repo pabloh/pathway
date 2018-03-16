@@ -22,12 +22,13 @@ module Pathway
       end
 
       module ClassMethods
-        attr_accessor :model_class, :search_field
+        attr_accessor :model_class, :search_field, :model_not_found
 
-        def model(model_class, search_by: model_class.primary_key, set_result_key: true)
-          self.model_class  = model_class
-          self.search_field = search_by
-          self.result_key   = Inflector.underscore(Inflector.demodulize(model_class.name)).to_sym if set_result_key
+        def model(model_class, search_by: model_class.primary_key, set_result_key: true, error_message: nil)
+          self.model_class      = model_class
+          self.search_field     = search_by
+          self.result_key       = Inflector.underscore(Inflector.demodulize(model_class.name)).to_sym if set_result_key
+          self.model_not_found  = error_message || Inflector.humanize(Inflector.underscore(Inflector.demodulize(model_class.name))) + ' not found'
         end
 
         def inherited(subclass)
@@ -39,21 +40,27 @@ module Pathway
 
       module InstanceMethods
         extend Forwardable
-        delegate %i[model_class search_field] => 'self.class'
+        delegate %i[model_class search_field model_not_found] => 'self.class'
         delegate :db => :model_class
 
-        def fetch_model(state, from: model_class, search_by: search_field, using: search_by, to: result_key, overwrite: false)
+        def fetch_model(state, from: model_class, search_by: search_field, using: search_by, to: result_key, overwrite: false, error_message: nil)
+          error_message ||= if from != model_class
+                              Inflector.humanize(Inflector.underscore(Inflector.demodulize(from.name))) + ' not found'
+                            else
+                              model_not_found
+                            end
+
           if state[to].nil? || overwrite
-            wrap_if_present(state[:input][using])
-              .then { |key| find_model_with(key, from, search_by) }
+            wrap_if_present(state[:input][using], message: error_message)
+              .then { |key| find_model_with(key, from, search_by, error_message) }
               .then { |model| state.update(to => model) }
           else
             state
           end
         end
 
-        def find_model_with(key, dataset = model_class, column = search_field)
-          wrap_if_present(dataset.first(column => key))
+        def find_model_with(key, dataset = model_class, column = search_field, error_message = nil)
+          wrap_if_present(dataset.first(column => key), message: error_message)
         end
       end
 

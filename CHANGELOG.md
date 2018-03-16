@@ -1,3 +1,9 @@
+## [0.6.1] - 2018-03-16
+### Changed
+- Update default error message for `:fetch_model` step, at `sequel_models` plugin, to indicate the model's name
+- Add `:error_message` option for `sequel_models` plugin initializer to set the default error message
+- Add `:error_message` option for `:fetch_model` step to override the default error message
+
 ## [0.6.0] - 2018-03-01
 ### Changed
 - Replace unmaintained `inflecto` gem with `dry-inflector`
