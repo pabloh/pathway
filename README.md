@@ -199,26 +199,26 @@ Lets start by showing some actual code:
 ```
 
 To define your `call` method using the DSL just call to `process` and pass a block, inside it the DSL will be available.
-Each `step` (or `set`) call is referring to a method inside the operation class, superclasses or available through a plugin, these methods will be eventually invoked on `call`.
+Each `step` (or `set`) call is referring to a method inside the operation class, superclasses or available through a plugin, these methods will be eventually invoked by `call`.
 All of the steps constitute the operation use case and follow a series of conventions in order to carry the process state along the execution process.
 
-When you run the `call` method, the auto-generated code will save the provided argument at the `input` key within the execution state. Subsequent steps will receive this state and will be able to update it, to set the result value or and auxiliary key to communicate with the next steps on the execution path.
+When you run the `call` method, the auto-generated code will save the provided argument at the `input` key within the execution state. Subsequent steps will receive this state and will be able to modify it, setting the result value or auxiliary keys to communicate with the next steps on the execution path.
 
 Each step (as the operation as whole) can succeed of fail, when the latter happens execution is halted, and the operation `call` method returns immediately.
 To signal a failure you must return a `failure(...)` or `error(...)` in the same fashion as when defining `call` directly.
 
 If you return a `success(...)` or anything that's not a failure the execution carries on but the value is ignored. If you want to save the result value, you must use `set` instead of `step` at the process block, that will save your wrapped value, into the key provided at `to:`.
 Also non-failure return values inside steps are automatically wrapped so you can use `success` for clarity sake but it's optional.
-If you omit the `to:` keyword argument when defining a `set` step, the result key value will be used by default, but we'll explain more on that later.
+If you omit the `to:` keyword argument when defining a `set` step, the result key will be used by default, but we'll explain more on that later.
 
 ##### Operation execution state
 
-In order to operate with the execution state, every step method receives a structure representing the current state. This structure is similar to a `Hash` and responds to its key methods (`:[]`, `:[]=`, `:fetch`, `:store` and `:include?`).
+In order to operate with the execution state, every step method receives a structure representing the current state. This structure is similar to a `Hash` and responds to its main methods (`:[]`, `:[]=`, `:fetch`, `:store`, `:include?` and `to_hash`).
 
-When an operation is executed, before running the first step, an initial state is created by coping all the values from the initialization context (and also including `input`).
+When an operation is executed, before running the first step, an initial state is created by copying all the values from the initialization context (and also including `input`).
 Note that these values can be replaced on later steps but it won't mutate the context object itself since is always frozen.
 
-A state object can be splatted on method definition in the same fashion as a `Hash`, allowing to cherry pick the attributes we are interested for a given step:
+A state object can be splatted on method definition in the same fashion as a `Hash`, thus, allowing to cherry pick the attributes we are interested on any given step:
 
 ```ruby
 # ...
@@ -229,13 +229,13 @@ A state object can be splatted on method definition in the same fashion as a `Ha
 # ...
 ```
 
-Note the empty double splat at the end of the parameter list, this Ruby-ism means: grab the mentioned keys and ignore all the rest. If you omit it when you have outstanding keys Ruby's `Hash` destructing will fail.
+Note the empty double splat at the end of the parameter list, this Ruby-ism means: grab the mentioned keys and ignore all the rest. If you omit the `**` when you have outstanding keys, Ruby's `Hash` destructing will fail.
 
 ##### Successful operation result
 
 On each step you can access or change the operation result for a successful execution.
 The value will be stored at one of the attributes within the state.
-By default the state `:value` key will hold the resulting value, but if you prefer to use another name you can specify it through the `result_at` operation class method.
+By default the state's key `:value` will hold the result, but if you prefer to use another name you can specify it through the `result_at` operation class method.
 
 ##### Full example
 
@@ -280,32 +280,33 @@ class CreateNugget < Pathway::Operation
 end
 ```
 
-In the above example the operation will create nugget (whatever that is...). As you can see we are using the methods we mention before to indicate that we need a current user to be present `context: current_user` on initialization, a `call` method to be defined `process do ... end`, and the result value should be stored at the `:nugget` key.
+The example above the operation will produce a nugget (whatever that is...).
+
+As you can see in the code, we are using the previously mentioned methods to indicate we need a current user to be present on initialization: `context: current_user`, a `call` method (defined by `process do ... end`), and that the result value should be stored at the `:nugget` key (`result_at :nugget`).
 
 Lets delve into the `process` block: it defines three steps using the `step` method and `create_nugget` using `set`, as we said before, this last step will set the result key (`:nugget`) since the `to:` keyword argument is absent.
 
 Now, for each of the step methods:
 
-- `:authorize` doesn't needs the state so just ignores it, then checks if the current user is allowed to perform the operation and halts the execution by returning a `:forbidden` error type if is not, otherwise does nothing and the execution goes on.
-- `:validate` gets the state, checks the validity of the `:input` value which as we said is just the `call` method input, returns an `error(...)` when there's a problem, and if the validation is correct it updates the state but saving the sanitized values in `:params`. Note that the return value is `state[:params]`, but is ignored like the last one, since this method is specified using `step`.
+- `:authorize` doesn't need the state so just ignores it, then checks if the current user is allowed to perform the operation and halts the execution by returning a `:forbidden` error type if is not, otherwise does nothing and the execution goes on.
+- `:validate` gets the state, checks the validity of the `:input` value which as we said is just the `call` method input, returns an `error(...)` when there's a problem, and if the validation is correct it updates the state but saving the sanitized values in `:params`. Note that on success the return value is `state[:params]`, but is ignored like on `:authorize`, since this method was also specified using `step`.
 - `:create_nugget` first takes the `:params` attribute from the state (ignoring everything else), and calls `create` on the `Nugget` model with the sanitized params and the current user. The return value is saved to the result key (`:nugget` in this case) as the step is defined using `step` without `to:`.
 - `:notify` grabs the `:nugget` from the state, and simply emits a notification with it, it has no meaningful return value, so is ignored.
 
-This example basically touches all the essential concepts needed for defining an operation class. If you can grasp it you already have a good understanding on how to implement one. There are still some very important bits to cover (like testing), and we'll tackle that on later sections.
+This example basically touches all the essential concepts needed for defining an operation class. If you can grasp it you've already a good understanding on how to implement one. There are still some very important bits to cover (like testing), and we'll tackle them on later sections.
 
-On a final note, you may be thinking that the code could be bit less verbose; also, shouldn't very common stuff like validation or authorization be simpler to use?; and maybe, why specify the result key?, it could be possible infer it from the surrounding code. We will address all these issues on the next section by using plugins, `pathway`'s extension mechanism.
+On a final note, you may be thinking the code could be bit less verbose; also, shouldn't very common stuff like validation or authorization be simpler to use?; and maybe, why specify the result key name?, it could be possible infer it from the surrounding code. We will address all those issues on the next section using plugins, `pathway`'s extension mechanism.
 
 ### Plugins
 
-Pathway can be extended by the use of plugins. They are very similar to the one found in [Roda](http://roda.jeremyevans.net/) or [Sequel](http://sequel.jeremyevans.net/). So if you are already familiar with any of those gems you shouldn't have any problem using `pathway`'s plugin system.
+Pathway operations can be extended with plugins. They are very similar as the ones found in [Roda](http://roda.jeremyevans.net/) or [Sequel](http://sequel.jeremyevans.net/). So if you are already familiar with any of those gems you shouldn't have any problem with `pathway`'s plugin system.
 
-In order to activate a plugin you must call the `plugin` method on the class:
+To activate a plugin just call the `plugin` method on the operation class:
 
 ```ruby
 class BaseOperation < Pathway::Operation
   plugin :foobar, qux: 'quz'
 end
-
 
 class SomeOperation < BaseOperation
   # The :foobar plugin will also be activated here
@@ -313,7 +314,7 @@ end
 ```
 
 The plugin name must be specified as a `Symbol` (or also as the `Module` where is implemented, but more on that later), and can it take parameters next to the plugin's name.
-When activated it will enrich your operations with new instance and class methods plus new customs step for the process DSL.
+When activated it will enrich your operations with new instance and class methods plus extra customs step for the process DSL.
 
 Mind you, if you wish to activate a plugin for a number of operations you can activate it for all of them directly on the `Pathway::Operation` class, or you can create your own base operation and all its descendants will inherit the base class' plugins.
 
@@ -346,7 +347,7 @@ class CreateNugget < Pathway::Operation
 end
 ```
 
-As it can be seen at the code above, the form is first defined elsewhere, and the operation can be set up to use it by calling `form NuggetForm`, and use validate the input at the process block by calling `step :validate`.
+As it can be seen at the code above, the form is first created elsewhere, then is configured to be used by the operation (by calling `form NuggetForm`), and validate the input at the process block by calling `step :validate`.
 
 ```ruby
 class CreateNugget < Pathway::Operation
@@ -366,7 +367,7 @@ class CreateNugget < Pathway::Operation
 end
 ```
 
-This second example is equivalent to the first one, but here we call `form` a block instead and no parameter; this block will be use as definition body for a form object that will be stored internally. This way you to keep the form and operation at the same place, which is convenient when you have a rather simpler form and don't need to reuse it.
+Now, this second example is equivalent to the first one, but here we call `form` with a block instead and no parameter; this block will be use as definition body for a form object that will be stored internally. Thus keeping the form and operation at the same place, this is convenient when you have a rather simpler form and don't need to reuse it.
 
 One interesting nuance to keep in mind regarding the inline block form is that, when doing operation inheritance, if the parent operation already has a form, the child operation will define a new one extending from the parent's. This is very useful to share form functionality among related operations in the same class hierarchy.
 
@@ -399,7 +400,7 @@ class CreateNugget < Pathway::Operation
 end
 ```
 
-Here we see that the form needs a `:user_name` option so we tell the operation to grab the attribute with the same name from the execution state by activating `:auto_wire_options`, afterwards, when the validation runs, the form will already have the user name available.
+Here the defined form needs a `:user_name` option, so we tell the operation to grab the attribute with the same name from the state by activating `:auto_wire_options`, afterwards, when the validation runs, the form will already have the user name available.
 
 Mind you, this option is `false` by default, so be sure to set it to `true` at `Pathway::Operation` if you'd rather have it for all your operations.
 
@@ -417,7 +418,7 @@ class CreateNugget < Pathway::Operation
   end
 
   process do
-    step :validate, with: { user_name: :current_user_name } # Inject :user_name to the form object using :current_user_name
+    step :validate, with: { user_name: :current_user_name } # Inject :user_name to the form object with the state's :current_user_name
     step :create_nugget
   end
 
