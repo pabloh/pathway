@@ -8,9 +8,9 @@ module Pathway
         result_at :result_value
 
         process do
-          step :_custom_validate
-          set  :_get_value
-          set  :_get_aux_value, to: :aux_value
+          step :custom_validate
+          set  :get_value
+          set  :get_aux_value, to: :aux_value
           sequence(-> seq, st { seq.call if cond.call(st) }) do
             set ->_ { 99 }, to: :aux_value
             set ->_ { :UPDATED }
@@ -21,20 +21,18 @@ module Pathway
           guard(:neg?) do
             set ->_ { :NEGATIVE }
           end
-          step :_notify
+          step :notify
         end
 
-        private
-
-        def _custom_validate(state)
+        def custom_validate(state)
           state[:params] = @validator.call(state)
         end
 
-        def _get_value(params:, **)
+        def get_value(params:, **)
           @back_end.call(params)
         end
 
-        def _get_aux_value(state)
+        def get_aux_value(state)
           state[result_key]
         end
 
@@ -46,7 +44,7 @@ module Pathway
           state[:result_value].is_a?(Numeric) && state[:result_value].negative?
         end
 
-        def _notify(state)
+        def notify(state)
           @notifier.call(state)
         end
       end
@@ -178,6 +176,5 @@ module Pathway
       end
 
     end
-
   end
 end
