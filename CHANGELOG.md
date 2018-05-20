@@ -1,3 +1,7 @@
+## [0.6.2] - 2018-05-19
+### Changed
+- Allow `:error_message` option for `sequel_models` plugin to propagate down inherited classes
+
 ## [0.6.1] - 2018-03-16
 ### Changed
 - Update default error message for `:fetch_model` step, at `sequel_models` plugin, to indicate the model's name
