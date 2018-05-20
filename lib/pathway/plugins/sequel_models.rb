@@ -28,13 +28,14 @@ module Pathway
           self.model_class      = model_class
           self.search_field     = search_by
           self.result_key       = Inflector.underscore(Inflector.demodulize(model_class.name)).to_sym if set_result_key
-          self.model_not_found  = error_message || Inflector.humanize(Inflector.underscore(Inflector.demodulize(model_class.name))) + ' not found'
+          self.model_not_found  = error_message || "#{Inflector.humanize(Inflector.underscore(Inflector.demodulize(model_class.name)))} not found".freeze
         end
 
         def inherited(subclass)
           super
-          subclass.model_class  = model_class
-          subclass.search_field = search_field
+          subclass.model_class     = model_class
+          subclass.search_field    = search_field
+          subclass.model_not_found = model_not_found
         end
       end
 

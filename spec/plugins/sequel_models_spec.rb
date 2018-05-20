@@ -31,6 +31,8 @@ module Pathway
         end
       end
 
+      class SubOperation < MyOperation; end
+
       let(:mailer) { double.tap { |d| allow(d).to receive(:send_emails) } }
       let(:operation) { MyOperation.new(mailer: mailer) }
 
@@ -90,8 +92,19 @@ module Pathway
         context 'when no :search_field option is specified' do
           let(:operation) { PkOperation.new }
 
-          it "sets the 'search_field' from the model's pk " do
+          it "sets the 'search_field' from the model's pk" do
             expect(operation.search_field).to eq(:pk)
+          end
+        end
+
+        context 'when the operation is inherited' do
+          it "sets 'result_key', 'search_field', 'model_class' and 'model_not_found' from the superclass" do
+            aggregate_failures do
+              expect(SubOperation.result_key).to eq(MyOperation.result_key)
+              expect(SubOperation.search_field).to eq(MyOperation.search_field)
+              expect(SubOperation.model_class).to eq(MyOperation.model_class)
+              expect(SubOperation.model_not_found).to eq(MyOperation.model_not_found)
+            end
           end
         end
       end
