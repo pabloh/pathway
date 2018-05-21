@@ -195,16 +195,16 @@ module Pathway
       end
 
       describe '#call' do
-        class CtxOperation < MyOperation
-          context my_model: nil
-        end
-
-        let(:operation)     { CtxOperation.new(ctx) }
+        let(:operation)     { MyOperation.new(ctx) }
         let(:result)        { operation.call(email: 'an@email.com') }
         let(:fetched_model) { MyModel.new }
 
         context 'when the model is not present at the context' do
           let(:ctx) { {} }
+
+          it "doesn't include the model's key on the operation's context" do
+            expect(operation.context).to_not include(:my_model)
+          end
           it 'fetchs the model from the DB' do
             expect(MyModel).to receive(:first).with(email: 'an@email.com').and_return(fetched_model)
 
@@ -216,14 +216,17 @@ module Pathway
           let(:existing_model) { MyModel.new }
           let(:ctx)            { { my_model: existing_model } }
 
+          it "includes the model's key on the operation's context" do
+            expect(operation.context).to include(my_model: existing_model)
+          end
           it 'uses the model from the context and avoid querying the DB' do
             expect(MyModel).to_not receive(:first)
 
             expect(result.value).to be(existing_model)
           end
 
-          context 'but overwrite: option in step is true' do
-            class OwOperation < CtxOperation
+          context 'but :fetch_model step specifies overwrite: true' do
+            class OwOperation < MyOperation
               process do
                 step :fetch_model, overwrite: true
               end
@@ -234,6 +237,7 @@ module Pathway
             it 'fetches the model from the DB anyway' do
               expect(MyModel).to receive(:first).with(email: 'an@email.com').and_return(fetched_model)
 
+              expect(operation.context).to include(my_model: existing_model)
               expect(operation.my_model).to be(existing_model)
               expect(result.value).to be(fetched_model)
             end
