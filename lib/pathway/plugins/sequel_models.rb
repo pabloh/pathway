@@ -24,11 +24,13 @@ module Pathway
       module ClassMethods
         attr_accessor :model_class, :search_field, :model_not_found
 
-        def model(model_class, search_by: model_class.primary_key, set_result_key: true, error_message: nil)
+        def model(model_class, search_by: model_class.primary_key, set_result_key: true, set_context_param: true, error_message: nil)
           self.model_class      = model_class
           self.search_field     = search_by
           self.result_key       = Inflector.underscore(Inflector.demodulize(model_class.name)).to_sym if set_result_key
           self.model_not_found  = error_message || "#{Inflector.humanize(Inflector.underscore(Inflector.demodulize(model_class.name)))} not found".freeze
+
+          self.context(result_key => Contextualizer::OPTIONAL) if set_result_key && set_context_param
         end
 
         def inherited(subclass)

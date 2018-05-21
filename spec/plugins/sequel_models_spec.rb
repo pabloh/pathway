@@ -36,13 +36,13 @@ module Pathway
       let(:mailer) { double.tap { |d| allow(d).to receive(:send_emails) } }
       let(:operation) { MyOperation.new(mailer: mailer) }
 
-      describe "DSL" do
+      describe 'DSL' do
         let(:result) { operation.call(params) }
         let(:params) { { email: 'asd@fgh.net' } }
         let(:model)  { double }
 
-        describe "#transaction" do
-          it "returns the result state provided by the inner transaction when successful" do
+        describe '#transaction' do
+          it 'returns the result state provided by the inner transaction when successful' do
             allow(MyModel).to receive(:first).with(params).and_return(model)
 
             expect(result).to be_a_success
@@ -57,15 +57,15 @@ module Pathway
           end
         end
 
-        describe "#after_commit" do
-          it "calls after_commit block when transaction is successful" do
+        describe '#after_commit' do
+          it 'calls after_commit block when transaction is successful' do
             allow(MyModel).to receive(:first).with(params).and_return(model)
             expect(mailer).to receive(:send_emails).with(model)
 
             expect(result).to be_a_success
           end
 
-          it "does not call after_commit block when transaction fails" do
+          it 'does not call after_commit block when transaction fails' do
             allow(MyModel).to receive(:first).with(params).and_return(nil)
 
             expect(mailer).to_not receive(:send_emails)
@@ -115,7 +115,7 @@ module Pathway
         end
       end
 
-      let(:key)    { "some@email.com" }
+      let(:key)    { 'some@email.com' }
       let(:params) { { foo: 3, bar: 4} }
 
       describe '#find_model_with' do
@@ -195,37 +195,38 @@ module Pathway
       end
 
       describe '#call' do
-        class CtxOperation < MyOperation
-          context my_model: nil
-        end
-
-        let(:operation)     { CtxOperation.new(ctx) }
+        let(:operation)     { MyOperation.new(ctx) }
         let(:result)        { operation.call(email: 'an@email.com') }
         let(:fetched_model) { MyModel.new }
 
-        context "when the model is not present at the context" do
+        context 'when the model is not present at the context' do
           let(:ctx) { {} }
-          it "fetchs the model from the DB" do
+
+          it "doesn't include the model's key on the operation's context" do
+            expect(operation.context).to_not include(:my_model)
+          end
+          it 'fetchs the model from the DB' do
             expect(MyModel).to receive(:first).with(email: 'an@email.com').and_return(fetched_model)
 
             expect(result.value).to be(fetched_model)
           end
         end
 
-        context "when the model is already present in the context" do
+        context 'when the model is already present in the context' do
           let(:existing_model) { MyModel.new }
           let(:ctx)            { { my_model: existing_model } }
 
-          it "uses the model from the context and avoid querying the DB" do
+          it "includes the model's key on the operation's context" do
+            expect(operation.context).to include(my_model: existing_model)
+          end
+          it 'uses the model from the context and avoid querying the DB' do
             expect(MyModel).to_not receive(:first)
 
             expect(result.value).to be(existing_model)
           end
 
-          context "but overwrite: option in step is true" do
-            class OwOperation < CtxOperation
-              context my_model: nil
-
+          context 'but :fetch_model step specifies overwrite: true' do
+            class OwOperation < MyOperation
               process do
                 step :fetch_model, overwrite: true
               end
@@ -233,16 +234,17 @@ module Pathway
 
             let(:operation) { OwOperation.new(ctx) }
 
-            it "fetches the model from the DB anyway" do
+            it 'fetches the model from the DB anyway' do
               expect(MyModel).to receive(:first).with(email: 'an@email.com').and_return(fetched_model)
 
+              expect(operation.context).to include(my_model: existing_model)
               expect(operation.my_model).to be(existing_model)
               expect(result.value).to be(fetched_model)
             end
           end
         end
       end
-    end
 
+    end
   end
 end

@@ -23,8 +23,8 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = ">= 2.4.0"
 
-  spec.add_dependency "dry-inflector", ">= 0.1.1"
-  spec.add_dependency "contextualizer", "~> 0.0.3"
+  spec.add_dependency "dry-inflector", ">= 0.1.0"
+  spec.add_dependency "contextualizer", "~> 0.0.4"
 
   spec.add_development_dependency "dry-validation", "~> 0.11"
   spec.add_development_dependency "bundler", ">= 1.14.0"

@@ -1,5 +1,10 @@
-## [0.6.2] - 2018-05-19
+## [0.7.0] - 2018-05-21
 ### Changed
+- `sequel_models` plugin now automatically adds an optional context parameter to preload the model and avoid hitting the db on `:fetch_model` when the model is already available.
+- Add `:set_context_param` option for `sequel_models` plugin to prevent adding the context parameter to preload the model into the context.
+
+## [0.6.2] - 2018-05-19
+### Fixes
 - Allow `:error_message` option for `sequel_models` plugin to propagate down inherited classes
 
 ## [0.6.1] - 2018-03-16
