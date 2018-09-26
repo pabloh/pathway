@@ -26,7 +26,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "dry-inflector", ">= 0.1.0"
   spec.add_dependency "contextualizer", "~> 0.0.4"
 
-  spec.add_development_dependency "dry-validation", "~> 0.11"
+  spec.add_development_dependency "dry-validation", "~> 0.11.0"
   spec.add_development_dependency "bundler", ">= 1.14.0"
   spec.add_development_dependency "sequel", "~> 4.46.0"
   spec.add_development_dependency "rake", "~> 10.0"

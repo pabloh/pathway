@@ -55,7 +55,7 @@ module Pathway
       @result_key = operation.result_key
     end
 
-    delegate %i([] []= fetch store include?) => :@hash
+    delegate %i([] []= fetch store include? values_at) => :@hash
 
     def update(kargs)
       @hash.update(kargs)

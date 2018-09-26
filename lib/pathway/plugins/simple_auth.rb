@@ -11,15 +11,20 @@ module Pathway
 
       module InstanceMethods
         def authorize(state, using: nil)
-          authorize_with(state[using || result_key]).then { state }
+          auth_state = if using.is_a?(Array)
+                         authorize_with(*state.values_at(*using))
+                       else
+                         authorize_with(state[using || result_key])
+                       end
+
+          auth_state.then { state }
         end
 
         def authorize_with(*objs)
-          objs = objs.first if objs.size <= 1
           authorized?(*objs) ? wrap(objs) : error(:forbidden)
         end
 
-        def authorized?(*_)
+        def authorized?(*)
           true
         end
       end

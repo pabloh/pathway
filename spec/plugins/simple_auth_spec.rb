@@ -15,7 +15,7 @@ module Pathway
         end
       end
 
-      class Auth2Operation < Operation
+      class AuthOperationParam < Operation
         plugin :simple_auth
 
         context value: :RESULT
@@ -27,8 +27,33 @@ module Pathway
         end
       end
 
+      class AuthOperationMultiParam < Operation
+        plugin :simple_auth
+
+        context :value1, :value2
+
+        authorization { |first, second| first == 10 && second == 20 }
+
+        process do
+          step :authorize, using: %i[value1 value2]
+        end
+      end
+
+
+      class AuthOperationWithArray < Operation
+        plugin :simple_auth
+
+        context :values
+
+        authorization { |values| values.size.even? }
+
+        process do
+          step :authorize, using: :values
+        end
+      end
+
       describe "#authorize" do
-        subject(:operation) { Auth2Operation.new }
+        subject(:operation) { AuthOperationParam.new }
 
         context "with no options" do
           it "passes the current result to the authorization block to authorize", :aggregate_failures do
@@ -67,17 +92,50 @@ module Pathway
           end
         end
 
-
-        context "when the authorization blocks expects params" do
+        context "when the authorization blocks expects a single param" do
           context "and calling with proper authorization" do
-            subject(:operation) { Auth2Operation.new }
+            subject(:operation) { AuthOperationParam.new }
             it "returns a successful result", :aggregate_failures do
               expect(result).to be_a_success
             end
           end
 
           context "and calling without proper authorization" do
-            subject(:operation) { Auth2Operation.new(value: :OTHER) }
+            subject(:operation) { AuthOperationParam.new(value: :OTHER) }
+            it "returns a failed result", :aggregate_failures do
+              expect(result).to be_a_failure
+              expect(result.error.type).to eq(:forbidden)
+            end
+          end
+        end
+
+        context "when the authorization blocks expects multiple params" do
+          context "and calling with proper authorization" do
+            subject(:operation) { AuthOperationMultiParam.new(value1: 10, value2: 20) }
+            it "returns a successful result", :aggregate_failures do
+              expect(result).to be_a_success
+            end
+          end
+
+          context "and calling without proper authorization" do
+            subject(:operation) { AuthOperationMultiParam.new(value1: -11, value2: 99) }
+            it "returns a failed result", :aggregate_failures do
+              expect(result).to be_a_failure
+              expect(result.error.type).to eq(:forbidden)
+            end
+          end
+        end
+
+        context "when the authorization blocks expects an array as param" do
+          context "and calling with proper authorization" do
+            subject(:operation) { AuthOperationWithArray.new(values: [3, 5]) }
+            it "returns a successful result", :aggregate_failures do
+              expect(result).to be_a_success
+            end
+          end
+
+          context "and calling without proper authorization" do
+            subject(:operation) { AuthOperationWithArray.new(values: [3, 4, 5]) }
             it "returns a failed result", :aggregate_failures do
               expect(result).to be_a_failure
               expect(result.error.type).to eq(:forbidden)
