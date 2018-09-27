@@ -385,7 +385,7 @@ class CreateNugget < Pathway::Operation
   context :user_name
 
   form do
-    configure { options :user_name }
+    configure { option :user_name }
 
     required(:owner).filled(:str?, :eql?: user_name)
     required(:price).filled(:int?)
@@ -411,7 +411,7 @@ class CreateNugget < Pathway::Operation
   context :current_user_name
 
   form do
-    configure { options :user_name }
+    configure { option :user_name }
 
     required(:owner).filled(:str?, :eql?: user_name)
     required(:price).filled(:int?)
