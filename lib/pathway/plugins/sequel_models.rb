@@ -5,17 +5,17 @@ module Pathway
     module SequelModels
       module DSLMethods
         def transaction(&bl)
-          sequence(-> seq, _ {
+          around(-> steps, _ {
             db.transaction(savepoint: true) do
-              raise Sequel::Rollback if seq.call.failure?
+              raise Sequel::Rollback if steps.call.failure?
             end
           }, &bl)
         end
 
         def after_commit(&bl)
-          sequence(-> seq, _ {
+          around(-> steps, _ {
             db.after_commit do
-              seq.call
+              steps.call
             end
           }, &bl)
         end
