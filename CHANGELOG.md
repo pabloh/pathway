@@ -1,7 +1,13 @@
+## [0.8.0] - 2018-10-01
+### Changed
+- Rename DSL method `sequence` to `around`. Keep `sequence` as an alias although, it may be deprecated on a future mayor release.
+- Rename DSL method `guard` to `if_true`. Keep `guard` as an alias, although it may be deprecated on a future mayor release.
+- Add DSL method `if_false`, which behaves like `if_true` but checks the passed predicate is false instead.
+
 ## [0.7.0] - 2018-09-25
 ### Changed
 - `sequel_models` plugin now automatically adds an optional context parameter to preload the model and avoid hitting the db on `:fetch_model` when the model is already available.
-- Add `:set_context_param` option for `sequel_models` plugin to prevent adding the context parameter to preload the model into the context.
+- Add `:set_context_param` option for `sequel_models` plugin to prevent trying to preload the model from the context.
 - Allow `authorization` block to take multiple parameters on `simple_auth` plugin.
 
 ## [0.6.2] - 2018-05-19

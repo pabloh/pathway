@@ -153,19 +153,27 @@ module Pathway
           @result = @result.then(bl)
         end
 
-        def sequence(steps_wrapper, &steps)
+        def around(wrapper, &steps)
           @result.then do |state|
             seq = -> { @result = dup.run(&steps) }
-            _callable(steps_wrapper).call(seq, state)
+            _callable(wrapper).call(seq, state)
           end
         end
 
-        def guard(cond, &steps)
+        def if_true(cond, &steps)
           cond = _callable(cond)
-          sequence(-> seq, state {
+          around(-> seq, state {
             seq.call if cond.call(state)
           }, &steps)
         end
+
+        def if_false(cond, &steps)
+          cond = _callable(cond)
+          if_true(-> state { !cond.call(state) }, &steps)
+        end
+
+        alias_method :sequence, :around
+        alias_method :guard, :if_true
 
         private
 
