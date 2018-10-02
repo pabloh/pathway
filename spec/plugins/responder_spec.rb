@@ -1,10 +1,8 @@
 require 'spec_helper'
-require 'pathway/responder'
 
 module Pathway
   module Plugins
-    describe Responder do
-
+    describe 'Responder' do
       class RespOperation < Operation
         plugin :responder
 

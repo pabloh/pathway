@@ -1,13 +1,14 @@
 ## [0.8.0] - 2018-10-01
 ### Changed
-- Rename DSL method `sequence` to `around`. Keep `sequence` as an alias although, it may be deprecated on a future mayor release.
-- Rename DSL method `guard` to `if_true`. Keep `guard` as an alias, although it may be deprecated on a future mayor release.
-- Add DSL method `if_false`, which behaves like `if_true` but checks the passed predicate is false instead.
+- Renamed DSL method `sequence` to `around`. Keep `sequence` as an alias although, it may be deprecated on a future mayor release.
+- Renamed DSL method `guard` to `if_true`. Keep `guard` as an alias, although it may be deprecated on a future mayor release.
+- Added DSL method `if_false`, which behaves like `if_true` but checks the passed predicate is false instead.
+- Moved `Responder` class into the `responder` plugin module.
 
 ## [0.7.0] - 2018-09-25
 ### Changed
 - `sequel_models` plugin now automatically adds an optional context parameter to preload the model and avoid hitting the db on `:fetch_model` when the model is already available.
-- Add `:set_context_param` option for `sequel_models` plugin to prevent trying to preload the model from the context.
+- Added `:set_context_param` option for `sequel_models` plugin to prevent trying to preload the model from the context.
 - Allow `authorization` block to take multiple parameters on `simple_auth` plugin.
 
 ## [0.6.2] - 2018-05-19
@@ -16,22 +17,22 @@
 
 ## [0.6.1] - 2018-03-16
 ### Changed
-- Update default error message for `:fetch_model` step, at `sequel_models` plugin, to indicate the model's name
-- Add `:error_message` option for `sequel_models` plugin initializer to set the default error message
-- Add `:error_message` option for `:fetch_model` step to override the default error message
+- Updated default error message for `:fetch_model` step, at `sequel_models` plugin, to indicate the model's name
+- Added `:error_message` option for `sequel_models` plugin initializer to set the default error message
+- Added `:error_message` option for `:fetch_model` step to override the default error message
 
 ## [0.6.0] - 2018-03-01
 ### Changed
-- Replace unmaintained `inflecto` gem with `dry-inflector`
+- Replaced unmaintained `inflecto` gem with `dry-inflector`
 
 ## [0.5.1] - 2017-12-18
 ### Changed
-- Change behavior for `:fetch_model` step option `search_by:` to override both the search column and the input key (combine it with `using:` if you need a different value for the input key as well)
+- Changed behavior for `:fetch_model` step option `search_by:` to override both the search column and the input key (combine it with `using:` if you need a different value for the input key as well)
 - `:fetch_model` step will no longer hit the database if the input key is nil and just return a `:not_found` error instead
 
 ## [0.5.0] - 2017-11-06
 ### Changed
-- Change base class for `Pathway::Error` from `StandardError` to `Object`
+- Changed base class for `Pathway::Error` from `StandardError` to `Object`
 
 ## [0.4.0] - 2017-10-31
 ### Changed
