@@ -10,7 +10,7 @@ module Pathway
         def form(base = nil, **opts, &block)
           if block_given?
             base ||= _base_form
-            self.form_class = Dry::Validation.Form(_form_class(base), _form_opts(opts), &block)
+            self.form_class = _block_definition(base, opts, &block)
           elsif base
             self.form_class = _form_class(base)
           else
@@ -37,7 +37,7 @@ module Pathway
         private
 
         def _base_form
-          superclass.respond_to?(:form_class) ? superclass.form_class : Dry::Validation::Schema::Form
+          superclass.respond_to?(:form_class) ? superclass.form_class : DefaultFormClass
         end
 
         def _form_class(form)
@@ -72,8 +72,28 @@ module Pathway
       end
 
       def self.apply(operation, auto_wire_options: false)
-        operation.form_class = Dry::Validation::Schema::Form
+        operation.form_class = DefaultFormClass
         operation.auto_wire_options = auto_wire_options
+      end
+
+      if Dry::Validation::VERSION[/\A0\.(\d+).\d+\Z/, 1].to_i >= 12
+        DefaultFormClass = Dry::Validation::Schema::Params
+
+        module ClassMethods
+          private
+          def _block_definition(base, opts, &block)
+            Dry::Validation.Params(_form_class(base), _form_opts(opts), &block)
+          end
+        end
+      else
+        DefaultFormClass = Dry::Validation::Schema::Form
+
+        module ClassMethods
+          private
+          def _block_definition(base, opts, &block)
+            Dry::Validation.Form(_form_class(base), _form_opts(opts), &block)
+          end
+        end
       end
     end
   end
