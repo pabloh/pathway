@@ -32,8 +32,14 @@ module Pathway
 
       SimpleModel = Struct.new(:name, :email, :role, :profile)
 
-      SimpleForm = Dry::Validation.Form do
-        required(:age).filled(:int?)
+      if Dry::Validation.respond_to? :Params
+        SimpleForm = Dry::Validation.Params do
+          required(:age).filled(:int?)
+        end
+      else
+        SimpleForm = Dry::Validation.Form do
+          required(:age).filled(:int?)
+        end
       end
 
       class OperationWithOpt < Operation
@@ -73,7 +79,7 @@ module Pathway
 
         context "when no form's been setup" do
           it "returns a default empty form" do
-            expect(operation_class.form_class).to eq(Dry::Validation::Schema::Form)
+            expect(operation_class.form_class).to eq(DryValidation::DefaultFormClass)
           end
         end
 
@@ -154,7 +160,7 @@ module Pathway
           end
 
           it "extends from the default form class" do
-            expect(operation_class.form_class).to be < Dry::Validation::Schema::Form
+            expect(operation_class.form_class).to be < DryValidation::DefaultFormClass
           end
 
           it "uses the rules defined at the passed block" do

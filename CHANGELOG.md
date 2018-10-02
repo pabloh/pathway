@@ -1,9 +1,10 @@
 ## [0.8.0] - 2018-10-01
 ### Changed
+- Added support for `dry-validation` 0.12.x
 - Renamed DSL method `sequence` to `around`. Keep `sequence` as an alias although, it may be deprecated on a future mayor release.
 - Renamed DSL method `guard` to `if_true`. Keep `guard` as an alias, although it may be deprecated on a future mayor release.
 - Added DSL method `if_false`, which behaves like `if_true` but checks the passed predicate is false instead.
-- Moved `Responder` class into the `responder` plugin module.
+- Moved `Responder` class inside the `responder` plugin module.
 
 ## [0.7.0] - 2018-09-25
 ### Changed
