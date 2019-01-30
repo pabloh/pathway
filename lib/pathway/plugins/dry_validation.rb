@@ -76,7 +76,7 @@ module Pathway
         operation.auto_wire_options = auto_wire_options
       end
 
-      if Dry::Validation::VERSION[/\A0\.(\d+).\d+\Z/, 1].to_i >= 12
+      if Gem.loaded_specs['dry-validation'].version >= Gem::Version.new('0.12')
         DefaultFormClass = Dry::Validation::Schema::Params
 
         module ClassMethods
