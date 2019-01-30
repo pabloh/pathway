@@ -1,3 +1,7 @@
+## [0.9.0] - 2019-04-01
+### Changed
+- Changed behavior for `:after_commit` step wrapper, on `:sequel_models` plugin, to capture current state and reuse it later when executing.
+
 ## [0.8.0] - 2018-10-01
 ### Changed
 - Added support for `dry-validation` 0.12.x

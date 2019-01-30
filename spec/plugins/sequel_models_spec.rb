@@ -18,12 +18,23 @@ module Pathway
         model MyModel, search_by: :email
 
         process do
+          step :fetch_model
+        end
+      end
+
+      class MailerOperation < MyOperation
+        process do
           transaction do
             step :fetch_model
             after_commit do
               step :send_emails
             end
           end
+          step :as_hash
+        end
+
+        def as_hash(state)
+          state[:my_model] = { model: state[:my_model] }
         end
 
         def send_emails(my_model:,**)
@@ -31,22 +42,37 @@ module Pathway
         end
       end
 
-      class SubOperation < MyOperation; end
+      class ChainedOperation < MyOperation
+        result_at :result
 
-      let(:mailer) { double.tap { |d| allow(d).to receive(:send_emails) } }
-      let(:operation) { MyOperation.new(mailer: mailer) }
+        process do
+          transaction do
+            set :chain_operation, to: :result
+          end
+        end
+
+        def chain_operation(input:,**)
+          opr = MailerOperation.new(mailer: @mailer)
+          opr.call(input)
+        end
+      end
+
+      class SubOperation < MyOperation; end
 
       describe 'DSL' do
         let(:result) { operation.call(params) }
         let(:params) { { email: 'asd@fgh.net' } }
         let(:model)  { double }
 
+        let(:operation) { MailerOperation.new(mailer: mailer) }
+        let(:mailer) { double.tap { |d| allow(d).to receive(:send_emails) } }
+
         describe '#transaction' do
           it 'returns the result state provided by the inner transaction when successful' do
             allow(MyModel).to receive(:first).with(params).and_return(model)
 
             expect(result).to be_a_success
-            expect(result.value).to eq(model)
+            expect(result.value).to eq(model: model)
           end
 
           it "returns the error state provided by the inner transaction when there's a failure" do
@@ -71,8 +97,22 @@ module Pathway
             expect(mailer).to_not receive(:send_emails)
             expect(result).to be_a_failure
           end
+
+          context 'when the state after if changed after the callback is set' do
+            let(:operation) { ChainedOperation.new(mailer: mailer) }
+
+            it 'ignores state changes that took place on the remaining steps' do
+              allow(MyModel).to receive(:first).with(params).and_return(model)
+              expect(mailer).to receive(:send_emails).with(model)
+
+              expect(result).to be_a_success
+              expect(result.value).to eq(model: model)
+            end
+          end
         end
       end
+
+      let(:operation) { MyOperation.new }
 
       describe '.model' do
         it "sets the 'result_key' using the model class name" do

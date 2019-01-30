@@ -13,9 +13,11 @@ module Pathway
         end
 
         def after_commit(&bl)
-          around(-> steps, _ {
+          around(-> steps, state {
+            dsl = self.class::DSL.new(State.new(self, state.to_h.dup), self)
+
             db.after_commit do
-              steps.call
+              steps.call(dsl)
             end
           }, &bl)
         end
