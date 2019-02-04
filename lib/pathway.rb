@@ -77,15 +77,20 @@ module Pathway
     module Base
       module ClassMethods
         attr_accessor :result_key
+        alias :result_at :result_key=
 
         def process(&bl)
           dsl = self::DSL
           define_method(:call) do |input|
-            dsl.new(self, input).run(&bl).then(&:result)
+            dsl.new(State.new(self, input: input), self)
+               .run(&bl)
+               .then(&:result)
           end
         end
 
-        alias :result_at :result_key=
+        def call(ctx, *params)
+          new(ctx).call(*params)
+        end
 
         def inherited(subclass)
           super
@@ -120,9 +125,8 @@ module Pathway
       end
 
       module DSLMethods
-        def initialize(operation, input)
-          @result = wrap(State.new(operation, input: input))
-          @operation = operation
+        def initialize(state, operation)
+          @result, @operation = wrap(state), operation
         end
 
         def run(&bl)
@@ -155,7 +159,7 @@ module Pathway
 
         def around(wrapper, &steps)
           @result.then do |state|
-            seq = -> { @result = dup.run(&steps) }
+            seq = -> (dsl = self) { @result = dsl.run(&steps) }
             _callable(wrapper).call(seq, state)
           end
         end

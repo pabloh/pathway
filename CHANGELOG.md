@@ -1,3 +1,10 @@
+## [0.9.0] - 2019-04-01
+### Changed
+- Changed behavior for `:after_commit` step wrapper, on `:sequel_models` plugin, to capture current state and reuse it later when executing.
+
+### Fixed
+- Allow invoking `call` directly on an operation class even if the `:responder` plugin is not loaded.
+
 ## [0.8.0] - 2018-10-01
 ### Changed
 - Added support for `dry-validation` 0.12.x
@@ -13,7 +20,7 @@
 - Allow `authorization` block to take multiple parameters on `simple_auth` plugin.
 
 ## [0.6.2] - 2018-05-19
-### Fixes
+### Fixed
 - Allow `:error_message` option for `sequel_models` plugin to propagate down inherited classes
 
 ## [0.6.1] - 2018-03-16
