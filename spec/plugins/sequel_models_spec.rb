@@ -52,8 +52,7 @@ module Pathway
         end
 
         def chain_operation(input:,**)
-          opr = MailerOperation.new(mailer: @mailer)
-          opr.call(input)
+          MailerOperation.call(context, input)
         end
       end
 

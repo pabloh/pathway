@@ -77,6 +77,7 @@ module Pathway
     module Base
       module ClassMethods
         attr_accessor :result_key
+        alias :result_at :result_key=
 
         def process(&bl)
           dsl = self::DSL
@@ -87,7 +88,9 @@ module Pathway
           end
         end
 
-        alias :result_at :result_key=
+        def call(ctx, *params)
+          new(ctx).call(*params)
+        end
 
         def inherited(subclass)
           super

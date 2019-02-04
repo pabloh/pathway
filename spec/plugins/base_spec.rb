@@ -3,6 +3,7 @@ require 'spec_helper'
 module Pathway
   module Plugins
     describe Base do
+
       class OperationWithSteps < Operation
         context :validator, :back_end, :notifier, :cond
         result_at :result_value
@@ -61,9 +62,8 @@ module Pathway
       let(:notifier)  { double }
       let(:cond)      { double }
 
-      subject(:operation) do
-        OperationWithSteps.new(validator: validator, back_end: back_end, notifier: notifier, cond: cond)
-      end
+      let(:ctx) { { validator: validator, back_end: back_end, notifier: notifier, cond: cond } }
+      subject(:operation) { OperationWithSteps.new(ctx) }
 
       before do
         allow(validator).to receive(:call) do |input:, **|
@@ -92,6 +92,16 @@ module Pathway
         end
 
         it "defines a 'call' method which returns a value using the key specified by 'result_at'" do
+          expect(back_end).to receive(:call).and_return(:SOME_RETURN_VALUE)
+
+          expect(result).to be_a_success
+          expect(result.value).to eq(:SOME_RETURN_VALUE)
+        end
+      end
+
+      describe ".call" do
+        let(:result) { OperationWithSteps.call(ctx, input) }
+        it "creates a new instance an invokes the 'call' method on it" do
           expect(back_end).to receive(:call).and_return(:SOME_RETURN_VALUE)
 
           expect(result).to be_a_success

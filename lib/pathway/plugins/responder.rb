@@ -3,7 +3,7 @@ module Pathway
     module Responder
       module ClassMethods
         def call(ctx, *params, &bl)
-          result = new(ctx).call(*params)
+          result = super(ctx, *params)
           block_given? ? Responder.respond(result, &bl) : result
         end
       end
