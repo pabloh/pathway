@@ -97,10 +97,10 @@ module Pathway
             expect(result).to be_a_failure
           end
 
-          context 'when the state after if changed after the callback is set' do
+          context 'when the execution state is changed bellow the after_commit callback' do
             let(:operation) { ChainedOperation.new(mailer: mailer) }
 
-            it 'ignores state changes that took place on the remaining steps' do
+            it 'ignores any state changes that took place posterior to the after_commit block' do
               allow(MyModel).to receive(:first).with(params).and_return(model)
               expect(mailer).to receive(:send_emails).with(model)
 
