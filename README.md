@@ -402,7 +402,7 @@ end
 
 Here the defined form needs a `:user_name` option, so we tell the operation to grab the attribute with the same name from the state by activating `:auto_wire_options`, afterwards, when the validation runs, the form will already have the user name available.
 
-Mind you, this option is `false` by default, so be sure to set it to `true` at `Pathway::Operation` if you'd rather have it for all your operations.
+Mind you, this option is `false` by default, so be sure to set it to `true` at `Pathway::Operation` if you'd rather have it enabled for all your operations.
 
 ```ruby
 class CreateNugget < Pathway::Operation
@@ -599,7 +599,7 @@ module Pathway
       module InstanceMethods
         delegate :model, :pk, to: :class
 
-        # This plugin will conflict will :sequel_models so you mustn't load them in the same operation
+        # This method will conflict with :sequel_models so you mustn't load both plugins in the same operation
         def fetch_model(state, column: pk)
           current_pk = state[:input][column]
           result     = model.first(column => current_pk)
@@ -613,7 +613,7 @@ module Pathway
       end
 
       module DSLMethods
-        # This method also conflicts with :sequel_models, so don't use them as once.
+        # This method also conflicts with :sequel_models, so don't use them at once
         def transaction(&steps)
           transactional_seq = -> seq, _state do
             ActiveRecord::Base.transaction do
@@ -635,10 +635,10 @@ end
 ```
 
 The code above implements a plugin to provide basic interaction with the [ActiveRecord](http://guides.rubyonrails.org/active_record_basics.html) gem.
-Even though is a very simply plugin, it shows all the essentials to develop more complex plugin.
+Even though is a very simple plugin, it shows all the essentials to develop more complex ones.
 
-First as is pointed out in the code, some of the methods implemented here (`fetch_model` and `transmission`) collide with methods defined for the `:sequel_models`, so as a consequence these two plugin's are not compatible with each other an cannot be activated at the same time on the same operation (although you can still do it for different operation within the same application).
-You must be mindful about colliding method names when mixing plugins, since `Pathway` can't book keep compatibility among every plugin that exists of will ever exist.
+As is pointed out in the code, some of the methods implemented here (`fetch_model` and `transmission`) collide with methods defined for `:sequel_models`, so as a consequence, these two plugin's are not compatible with each other and cannot be activated for the same operation (although you can still do it for different operations within the same application).
+You must be mindful about colliding method names when mixing plugins, since `Pathway` can't bookkeep compatibility among every plugin that exists of will ever exist.
 Is a good practice to document known incompatibilities on the plugin definition itself when they are known.
 
 The whole plugin is completely defined within the `ActiveRecord` module inside the `Pathway::Plugins` namespace, also the file is placed at the load path in `pathway/plugin/active_record.rb` (assuming `lib/` is listed in `$LOAD_PATH`). This will ensure, when calling `plugin :active_record` inside an operation, the correct file will be loaded and the correct plugin module will be applied to the current operation.
