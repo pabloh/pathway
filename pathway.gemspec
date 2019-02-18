@@ -11,8 +11,13 @@ Gem::Specification.new do |spec|
 
   spec.summary       = %q{Define your business logic in simple steps.}
   spec.description   = %q{Define your business logic in simple steps.}
-  #spec.homepage     = "TODO: Put your gem's website or public repo URL here."
+  spec.homepage      = "https://github.com/pabloh/pathway"
   spec.license       = "MIT"
+
+  spec.metadata = {
+    "bug_tracker_uri" => "https://github.com/pabloh/pathway/issues",
+    "source_code_uri" => "https://github.com/pabloh/pathway",
+  }
 
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
     f.match(%r{^(test|spec|features)/})
