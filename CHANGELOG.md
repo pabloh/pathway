@@ -1,3 +1,7 @@
+## [0.9.1] - 2019-02-18
+### Changed
+- Various improvements on documentation and gemspec.
+
 ## [0.9.0] - 2019-02-04
 ### Changed
 - Changed behavior for `:after_commit` step wrapper, on `:sequel_models` plugin, to capture current state and reuse it later when executing.
