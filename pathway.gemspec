@@ -14,7 +14,7 @@ Gem::Specification.new do |spec|
   spec.homepage      = "https://github.com/pabloh/pathway"
   spec.license       = "MIT"
 
-  spec.metadata = {
+  spec.metadata      = {
     "bug_tracker_uri" => "https://github.com/pabloh/pathway/issues",
     "source_code_uri" => "https://github.com/pabloh/pathway",
   }
