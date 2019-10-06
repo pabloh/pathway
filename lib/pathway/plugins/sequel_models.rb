@@ -4,22 +4,34 @@ module Pathway
   module Plugins
     module SequelModels
       module DSLMethods
-        def transaction(&bl)
-          around(-> steps, _ {
-            db.transaction(savepoint: true) do
-              raise Sequel::Rollback if steps.call.failure?
-            end
-          }, &bl)
+        def transaction(step_name = nil, &bl)
+          fail 'must provide a step or a block but not both' if !step_name.nil? == block_given?
+
+          if step_name
+            transaction { step step_name }
+          else
+            around(-> steps, _ {
+              db.transaction(savepoint: true) do
+                raise Sequel::Rollback if steps.call.failure?
+              end
+            }, &bl)
+          end
         end
 
-        def after_commit(&bl)
-          around(-> steps, state {
-            dsl = self.class::DSL.new(State.new(self, state.to_h.dup), self)
+        def after_commit(step_name = nil, &bl)
+          fail 'must provide a step or a block but not both' if !step_name.nil? == block_given?
 
-            db.after_commit do
-              steps.call(dsl)
-            end
-          }, &bl)
+          if step_name
+            after_commit { step step_name }
+          else
+            around(-> steps, state {
+              dsl = self.class::DSL.new(State.new(self, state.to_h.dup), self)
+
+              db.after_commit do
+                steps.call(dsl)
+              end
+            }, &bl)
+          end
         end
       end
 

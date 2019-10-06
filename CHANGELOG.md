@@ -1,3 +1,9 @@
+## [0.10.0] - 2019-10-06
+### Changed
+- Restrict support for `dry-validation` from 0.11.0 up to (excluding) 1.0.0
+- Changed behavior for `:transaction` step wrapper, on `:sequel_models` plugin, to allow to take a single step name instead of block.
+- Changed behavior for `:after_commit` step wrapper, on `:sequel_models` plugin, to allow to take a single step name instead of block.
+
 ## [0.9.1] - 2019-02-18
 ### Changed
 - Various improvements on documentation and gemspec.

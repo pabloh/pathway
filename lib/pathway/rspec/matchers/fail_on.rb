@@ -38,20 +38,20 @@ RSpec::Matchers.define :fail_on do |input|
   alias :and_details :details
 
   description do
-    "fail" + (@type ? " with :#@type error" : '')
+    'fail' + (@type ? " with :#@type error" : '')
   end
 
   failure_message do
     if !failure?
       "Expected operation to fail but it didn't"
     else
-      "Expected failed operation to " +
+      'Expected failed operation to ' +
         as_sentence(failure_descriptions, connector: '; ', last_connector: '; and ')
     end
   end
 
   failure_message_when_negated do
-    "Did not to expected operation to fail but it did"
+    'Did not to expected operation to fail but it did'
   end
 
   def failure?

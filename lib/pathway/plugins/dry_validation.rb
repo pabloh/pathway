@@ -76,7 +76,18 @@ module Pathway
         operation.auto_wire_options = auto_wire_options
       end
 
-      if Gem.loaded_specs['dry-validation'].version >= Gem::Version.new('0.12')
+      if Gem.loaded_specs['dry-validation'].version < Gem::Version.new('0.11')
+        fail "unsupported dry-validation gem version"
+      elsif Gem.loaded_specs['dry-validation'].version < Gem::Version.new('0.12')
+        DefaultFormClass = Dry::Validation::Schema::Form
+
+        module ClassMethods
+          private
+          def _block_definition(base, opts, &block)
+            Dry::Validation.Form(_form_class(base), _form_opts(opts), &block)
+          end
+        end
+      elsif Gem.loaded_specs['dry-validation'].version < Gem::Version.new('1.0')
         DefaultFormClass = Dry::Validation::Schema::Params
 
         module ClassMethods
@@ -86,14 +97,7 @@ module Pathway
           end
         end
       else
-        DefaultFormClass = Dry::Validation::Schema::Form
-
-        module ClassMethods
-          private
-          def _block_definition(base, opts, &block)
-            Dry::Validation.Form(_form_class(base), _form_opts(opts), &block)
-          end
-        end
+        fail 'unsupported dry-validation gem version'
       end
     end
   end

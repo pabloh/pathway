@@ -63,49 +63,184 @@ module Pathway
         let(:params) { { email: 'asd@fgh.net' } }
         let(:model)  { double }
 
-        let(:operation) { MailerOperation.new(mailer: mailer) }
         let(:mailer) { double.tap { |d| allow(d).to receive(:send_emails) } }
 
         describe '#transaction' do
-          it 'returns the result state provided by the inner transaction when successful' do
-            allow(MyModel).to receive(:first).with(params).and_return(model)
+          context 'when providing a block' do
+            let(:operation) { MailerOperation.new(mailer: mailer) }
+            before { expect(DB).to receive(:transaction).and_call_original }
 
-            expect(result).to be_a_success
-            expect(result.value).to eq(model: model)
+            it 'returns the result state provided by the inner transaction when successful' do
+              allow(MyModel).to receive(:first).with(params).and_return(model)
+
+              expect(result).to be_a_success
+              expect(result.value).to eq(model: model)
+            end
+
+            it "returns the error state provided by the inner transaction when there's a failure" do
+              allow(MyModel).to receive(:first).with(params).and_return(nil)
+
+              expect(result).to be_a_failure
+              expect(result.error.type).to eq(:not_found)
+            end
           end
 
-          it "returns the error state provided by the inner transaction when there's a failure" do
-            allow(MyModel).to receive(:first).with(params).and_return(nil)
+          context 'when providing a step' do
+            class FetchStepOperation < MyOperation
+              process do
+                transaction :fetch_model
+              end
+            end
 
-            expect(result).to be_a_failure
-            expect(result.error.type).to eq(:not_found)
+            let(:operation) { FetchStepOperation.new(mailer: mailer) }
+            before { expect(DB).to receive(:transaction).and_call_original }
+
+            it 'returns the result state provided by the inner transaction when successful' do
+              allow(MyModel).to receive(:first).with(params).and_return(model)
+
+              expect(result).to be_a_success
+              expect(result.value).to eq(model)
+            end
+
+            it "returns the error state provided by the inner transaction when there's a failure" do
+              allow(MyModel).to receive(:first).with(params).and_return(nil)
+
+              expect(result).to be_a_failure
+              expect(result.error.type).to eq(:not_found)
+            end
+          end
+
+          context 'when providing a block and a step' do
+            class InvalidOperation < MyOperation
+              process do
+                transaction :perform_db_action do
+                  step :perform_other_db_action
+                end
+              end
+            end
+
+            let(:operation) { InvalidOperation.new }
+
+            it 'raises an error' do
+              expect { result }.to raise_error.with_message('must provide a step or a block but not both')
+            end
+          end
+
+          context 'when not providing a block nor a step' do
+            class InvalidOperation < MyOperation
+              process do
+                transaction
+              end
+            end
+
+            let(:operation) { InvalidOperation.new }
+
+            it 'raises an error' do
+              expect { result }.to raise_error.with_message('must provide a step or a block but not both')
+            end
           end
         end
 
         describe '#after_commit' do
-          it 'calls after_commit block when transaction is successful' do
-            allow(MyModel).to receive(:first).with(params).and_return(model)
-            expect(mailer).to receive(:send_emails).with(model)
+          context 'when providing a block' do
+            let(:operation) { MailerOperation.new(mailer: mailer) }
 
-            expect(result).to be_a_success
-          end
-
-          it 'does not call after_commit block when transaction fails' do
-            allow(MyModel).to receive(:first).with(params).and_return(nil)
-
-            expect(mailer).to_not receive(:send_emails)
-            expect(result).to be_a_failure
-          end
-
-          context 'when the execution state is changed bellow the after_commit callback' do
-            let(:operation) { ChainedOperation.new(mailer: mailer) }
-
-            it 'ignores any state changes that took place posterior to the after_commit block' do
+            it 'calls after_commit block when transaction is successful' do
+              expect(DB).to receive(:transaction).and_call_original
               allow(MyModel).to receive(:first).with(params).and_return(model)
+              expect(DB).to receive(:after_commit).and_call_original
               expect(mailer).to receive(:send_emails).with(model)
 
               expect(result).to be_a_success
-              expect(result.value).to eq(model: model)
+            end
+
+            it 'does not call after_commit block when transaction fails' do
+              expect(DB).to receive(:transaction).and_call_original
+              allow(MyModel).to receive(:first).with(params).and_return(nil)
+              expect(DB).to_not receive(:after_commit).and_call_original
+              expect(mailer).to_not receive(:send_emails)
+
+              expect(result).to be_a_failure
+            end
+
+            context 'when the execution state is changed bellow the after_commit callback' do
+              let(:operation) { ChainedOperation.new(mailer: mailer) }
+
+              it 'ignores any state changes that took place subsequent to the after_commit block' do
+                allow(MyModel).to receive(:first).with(params).and_return(model)
+                expect(mailer).to receive(:send_emails).with(model)
+
+                expect(result).to be_a_success
+                expect(result.value).to eq(model: model)
+              end
+            end
+          end
+
+          context 'when providing a step' do
+            class SendEmailStepOperation < MyOperation
+              process do
+                transaction do
+                  step :fetch_model
+                  after_commit :send_emails
+                end
+              end
+
+              def send_emails(my_model:,**)
+                @mailer.send_emails(my_model) if @mailer
+              end
+            end
+
+            let(:operation) { SendEmailStepOperation.new(mailer: mailer) }
+            before { expect(DB).to receive(:transaction).and_call_original }
+
+            it 'calls after_commit block when transaction is successful' do
+              allow(MyModel).to receive(:first).with(params).and_return(model)
+              expect(DB).to receive(:after_commit).and_call_original
+              expect(mailer).to receive(:send_emails).with(model)
+
+              expect(result).to be_a_success
+            end
+
+            it 'does not call after_commit block when transaction fails' do
+              allow(MyModel).to receive(:first).with(params).and_return(nil)
+              expect(DB).to_not receive(:after_commit).and_call_original
+              expect(mailer).to_not receive(:send_emails)
+
+              expect(result).to be_a_failure
+            end
+          end
+
+          context 'when providing a block and a step' do
+            class InvalidOperation < MyOperation
+              process do
+                transaction do
+                  after_commit :perform_db_action do
+                    step :perform_other_db_action
+                  end
+                end
+              end
+            end
+
+            let(:operation) { InvalidOperation.new }
+
+            it 'raises an error' do
+              expect { result }.to raise_error.with_message('must provide a step or a block but not both')
+            end
+          end
+
+          context 'when not providing a block nor a step' do
+            class InvalidOperation < MyOperation
+              process do
+                transaction do
+                  after_commit
+                end
+              end
+            end
+
+            let(:operation) { InvalidOperation.new }
+
+            it 'raises an error' do
+              expect { result }.to raise_error.with_message('must provide a step or a block but not both')
             end
           end
         end
