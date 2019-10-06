@@ -107,7 +107,7 @@ module Pathway
         alias :wrap :result
 
         def call(*)
-          fail "must implement at subclass"
+          fail 'must implement at subclass'
         end
 
         def error(type, message: nil, details: nil)
