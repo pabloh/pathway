@@ -1,6 +1,6 @@
 require 'bundler/setup'
 
-if ENV['CI']
+if ENV['REPORT_COVERAGE']
   require 'simplecov'
   require 'coveralls'
 
