@@ -33,8 +33,8 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency "dry-validation", ">= 0.11", "< 1.0"
   spec.add_development_dependency "bundler", ">= 1.14.0"
-  spec.add_development_dependency "sequel", "~> 4.46.0"
-  spec.add_development_dependency "rake", "~> 10.0"
+  spec.add_development_dependency "sequel", "~> 5.25.0"
+  spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "rspec", "~> 3.0"
   spec.add_development_dependency "coveralls"
   spec.add_development_dependency "pry"
