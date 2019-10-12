@@ -59,7 +59,6 @@ module Pathway
       end
 
       describe 'DSL' do
-        let(:result) { operation.call(params) }
         let(:params) { { email: 'asd@fgh.net' } }
         let(:model)  { double }
 
@@ -68,20 +67,58 @@ module Pathway
         describe '#transaction' do
           context 'when providing a block' do
             let(:operation) { MailerOperation.new(mailer: mailer) }
-            before { expect(DB).to receive(:transaction).and_call_original }
+            before { allow(DB).to receive(:transaction).and_call_original }
 
             it 'returns the result state provided by the inner transaction when successful' do
               allow(MyModel).to receive(:first).with(params).and_return(model)
 
-              expect(result).to be_a_success
-              expect(result.value).to eq(model: model)
+              expect(operation).to succeed_on(params).returning(model: model)
             end
 
             it "returns the error state provided by the inner transaction when there's a failure" do
               allow(MyModel).to receive(:first).with(params).and_return(nil)
 
-              expect(result).to be_a_failure
-              expect(result.error.type).to eq(:not_found)
+              expect(operation).to fail_on(params).with_type(:not_found)
+            end
+
+            context 'a conditional,' do
+              class IfConditionalOperation < PkOperation
+                context :should_run
+
+                process do
+                  transaction(if: :should_run?) do
+                    step :fetch_model
+                  end
+                end
+
+                private
+                def should_run?(state)= state[:should_run]
+              end
+
+              let(:operation) { IfConditionalOperation.new(should_run: should_run) }
+              let(:params) { { pk: 77 } }
+
+              context 'when the condition is true' do
+                let(:should_run) { true }
+
+                it 'executes the transaction' do
+                  expect(DB).to receive(:transaction).once.and_call_original
+                  expect(MyModel).to receive(:first).with(params).and_return(model)
+
+                  expect(operation).to succeed_on(params).returning(model)
+                end
+              end
+
+              context 'when the condition is false' do
+                let(:should_run) { false }
+
+                it 'skips the transaction' do
+                  expect(MyModel).to_not receive(:first)
+                  expect(DB).to_not receive(:transaction)
+
+                  expect(operation).to succeed_on(params)
+                end
+              end
             end
           end
 
@@ -93,25 +130,79 @@ module Pathway
             end
 
             let(:operation) { FetchStepOperation.new(mailer: mailer) }
-            before { expect(DB).to receive(:transaction).and_call_original }
+            before { allow(DB).to receive(:transaction).and_call_original }
 
             it 'returns the result state provided by the inner transaction when successful' do
               allow(MyModel).to receive(:first).with(params).and_return(model)
 
-              expect(result).to be_a_success
-              expect(result.value).to eq(model)
+              expect(operation).to succeed_on(params).returning(model)
             end
 
             it "returns the error state provided by the inner transaction when there's a failure" do
               allow(MyModel).to receive(:first).with(params).and_return(nil)
 
-              expect(result).to be_a_failure
-              expect(result.error.type).to eq(:not_found)
+              expect(operation).to fail_on(params).with_type(:not_found)
+            end
+
+            context 'and conditional' do
+              class UnlessConditionalOperation < PkOperation
+                context :should_skip
+
+                process do
+                  transaction :create_model, unless: :should_skip?
+                end
+
+                def create_model(state)
+                  state[result_key] = model_class.create(state[:input])
+                end
+
+                private
+                def should_skip?(state)= state[:should_skip]
+              end
+
+              let(:operation) { UnlessConditionalOperation.new(should_skip: should_skip) }
+              let(:params) { { pk: 99 } }
+
+              context 'if the condition is true' do
+                let(:should_skip) { false }
+
+                it 'executes the transaction' do
+                  expect(DB).to receive(:transaction).once.and_call_original
+                  expect(MyModel).to receive(:create).with(params).and_return(model)
+
+                  expect(operation).to succeed_on(params).returning(model)
+                end
+              end
+
+              context 'if the condition is false' do
+                let(:should_skip) { true }
+
+                it 'skips the transaction' do
+                  expect(DB).to_not receive(:transaction)
+                  expect(MyModel).to_not receive(:create)
+
+                  expect(operation).to succeed_on(params)
+                end
+              end
+            end
+          end
+
+          context 'when both an :if and :unless conditional' do
+            class InvalidUseOfCondOperation < MyOperation
+              process do
+                transaction :perform_db_action, if: :is_good?, unless: :is_bad?
+              end
+            end
+
+            let(:operation) { InvalidUseOfCondOperation.new }
+
+            it 'raises an error' do
+              expect { operation.call(params) }.to raise_error.with_message('options :if and :unless are mutually exclusive')
             end
           end
 
           context 'when providing a block and a step' do
-            class InvalidOperation < MyOperation
+            class AmbivalentTransactOperation < MyOperation
               process do
                 transaction :perform_db_action do
                   step :perform_other_db_action
@@ -119,24 +210,24 @@ module Pathway
               end
             end
 
-            let(:operation) { InvalidOperation.new }
+            let(:operation) { AmbivalentTransactOperation.new }
 
             it 'raises an error' do
-              expect { result }.to raise_error.with_message('must provide a step or a block but not both')
+              expect { operation.call(params) }.to raise_error.with_message('must provide either a step or a block but not both')
             end
           end
 
           context 'when not providing a block nor a step' do
-            class InvalidOperation < MyOperation
+            class EmptyTransacOperation < MyOperation
               process do
                 transaction
               end
             end
 
-            let(:operation) { InvalidOperation.new }
+            let(:operation) { EmptyTransacOperation.new }
 
             it 'raises an error' do
-              expect { result }.to raise_error.with_message('must provide a step or a block but not both')
+              expect { operation.call(params) }.to raise_error.with_message('must provide either a step or a block but not both')
             end
           end
         end
@@ -151,7 +242,7 @@ module Pathway
               expect(DB).to receive(:after_commit).and_call_original
               expect(mailer).to receive(:send_emails).with(model)
 
-              expect(result).to be_a_success
+              expect(operation).to succeed_on(params)
             end
 
             it 'does not call after_commit block when transaction fails' do
@@ -160,7 +251,7 @@ module Pathway
               expect(DB).to_not receive(:after_commit).and_call_original
               expect(mailer).to_not receive(:send_emails)
 
-              expect(result).to be_a_failure
+              expect(operation).to fail_on(params)
             end
 
             context 'when the execution state is changed bellow the after_commit callback' do
@@ -170,8 +261,7 @@ module Pathway
                 allow(MyModel).to receive(:first).with(params).and_return(model)
                 expect(mailer).to receive(:send_emails).with(model)
 
-                expect(result).to be_a_success
-                expect(result.value).to eq(model: model)
+                expect(operation).to succeed_on(params).returning(model: model)
               end
             end
           end
@@ -198,7 +288,7 @@ module Pathway
               expect(DB).to receive(:after_commit).and_call_original
               expect(mailer).to receive(:send_emails).with(model)
 
-              expect(result).to be_a_success
+              expect(operation).to succeed_on(params)
             end
 
             it 'does not call after_commit block when transaction fails' do
@@ -206,12 +296,173 @@ module Pathway
               expect(DB).to_not receive(:after_commit).and_call_original
               expect(mailer).to_not receive(:send_emails)
 
-              expect(result).to be_a_failure
+              expect(operation).to fail_on(params)
+            end
+          end
+
+          context 'with conditional execution' do
+            context 'using :if with and a block' do
+              class IfConditionalAfterCommitOperation < MyOperation
+                context :should_run
+
+                process do
+                  transaction do
+                    step :fetch_model
+                    after_commit(if: :should_run?) do
+                      step :send_emails
+                    end
+                  end
+                end
+
+                def send_emails(state)
+                  @mailer.send_emails(state[:my_model]) if @mailer
+                end
+
+                private
+                def should_run?(state) = state[:should_run]
+              end
+
+              let(:operation) { IfConditionalAfterCommitOperation.new(mailer: mailer, should_run: should_run) }
+              let(:params) { { email: 'asd@fgh.net' } }
+
+              before { allow(MyModel).to receive(:first).with(params).and_return(model) }
+
+              context 'when the condition is true' do
+                let(:should_run) { true }
+
+                it 'executes the after_commit block' do
+                  expect(DB).to receive(:after_commit).and_call_original
+                  expect(mailer).to receive(:send_emails).with(model)
+
+                  expect(operation).to succeed_on(params)
+                end
+              end
+
+              context 'when the condition is false' do
+                let(:should_run) { false }
+
+                it 'skips the after_commit block' do
+                  expect(DB).to_not receive(:after_commit)
+                  expect(mailer).to_not receive(:send_emails)
+
+                  expect(operation).to succeed_on(params)
+                end
+              end
+            end
+
+            context 'using :unless and a block' do
+              class UnlessConditionalAfterCommitOperation < MyOperation
+                context :should_skip
+
+                process do
+                  transaction do
+                    step :fetch_model
+                    after_commit(unless: :should_skip?) do
+                      step :send_emails
+                    end
+                  end
+                end
+
+                def send_emails(state)
+                  @mailer.send_emails(state[:my_model]) if @mailer
+                end
+
+                private
+                def should_skip?(state) = state[:should_skip]
+              end
+
+              let(:operation) { UnlessConditionalAfterCommitOperation.new(mailer: mailer, should_skip: should_skip) }
+              let(:params) { { email: 'asd@fgh.net' } }
+
+              before { allow(MyModel).to receive(:first).with(params).and_return(model) }
+
+              context 'when the condition is false' do
+                let(:should_skip) { false }
+
+                it 'executes the after_commit block' do
+                  expect(DB).to receive(:after_commit).and_call_original
+                  expect(mailer).to receive(:send_emails).with(model)
+
+                  expect(operation).to succeed_on(params)
+                end
+              end
+
+              context 'when the condition is true' do
+                let(:should_skip) { true }
+
+                it 'skips the after_commit block' do
+                  expect(DB).to_not receive(:after_commit)
+                  expect(mailer).to_not receive(:send_emails)
+
+                  expect(operation).to succeed_on(params)
+                end
+              end
+            end
+
+            context 'using :if with step name' do
+              class IfStepConditionalAfterCommitOperation < MyOperation
+                context :should_run
+
+                process do
+                  transaction do
+                    step :fetch_model
+                    after_commit :send_emails, if: :should_run?
+                  end
+                end
+
+                def send_emails(state)
+                  @mailer.send_emails(state[:my_model]) if @mailer
+                end
+
+                private
+                def should_run?(state) = state[:should_run]
+              end
+
+              before { allow(MyModel).to receive(:first).with(email: 'asd@fgh.net').and_return(model) }
+              let(:operation) { IfStepConditionalAfterCommitOperation.new(mailer: mailer, should_run: should_run) }
+
+              context 'when the condition is true' do
+                let(:should_run) { true }
+
+                it 'executes the after_commit step' do
+                  expect(DB).to receive(:after_commit).and_call_original
+                  expect(mailer).to receive(:send_emails).with(model)
+
+                  expect(operation).to succeed_on(params)
+                end
+              end
+
+              context 'when the condition is false' do
+                let(:should_run) { false }
+
+                it 'skips the after_commit step' do
+                  expect(DB).to_not receive(:after_commit)
+                  expect(mailer).to_not receive(:send_emails)
+
+                  expect(operation).to succeed_on(params)
+                end
+              end
+            end
+
+            context 'when both :if and :unless are provided' do
+              class InvalidConditionalAfterCommitOperation < MyOperation
+                process do
+                  transaction do
+                    after_commit :send_emails, if: :is_good?, unless: :is_bad?
+                  end
+                end
+              end
+
+              let(:operation) { InvalidConditionalAfterCommitOperation.new }
+
+              it 'raises an error' do
+                expect { operation.call(params) }.to raise_error.with_message('options :if and :unless are mutually exclusive')
+              end
             end
           end
 
           context 'when providing a block and a step' do
-            class InvalidOperation < MyOperation
+            class AmbivalentAfterCommitOperation < MyOperation
               process do
                 transaction do
                   after_commit :perform_db_action do
@@ -221,15 +472,15 @@ module Pathway
               end
             end
 
-            let(:operation) { InvalidOperation.new }
+            let(:operation) { AmbivalentAfterCommitOperation.new }
 
             it 'raises an error' do
-              expect { result }.to raise_error.with_message('must provide a step or a block but not both')
+              expect { operation.call(params) }.to raise_error.with_message('must provide either a step or a block but not both')
             end
           end
 
           context 'when not providing a block nor a step' do
-            class InvalidOperation < MyOperation
+            class InvalidAfterCommitOperation < MyOperation
               process do
                 transaction do
                   after_commit
@@ -237,10 +488,10 @@ module Pathway
               end
             end
 
-            let(:operation) { InvalidOperation.new }
+            let(:operation) { InvalidAfterCommitOperation.new }
 
             it 'raises an error' do
-              expect { result }.to raise_error.with_message('must provide a step or a block but not both')
+              expect { operation.call(params) }.to raise_error.with_message('must provide either a step or a block but not both')
             end
           end
         end

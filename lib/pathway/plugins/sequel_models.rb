@@ -6,11 +6,11 @@ module Pathway
   module Plugins
     module SequelModels
       module DSLMethods
-        def transaction(step_name = nil, &dsl_bl)
-          raise 'must provide a step or a block but not both' if !step_name.nil? == block_given?
+        def transaction(step_name = nil, if: nil, unless: nil, &)
+          cond, dsl_bl = _transact_opts(step_name, *%i[if unless].map { binding.local_variable_get(_1) }, &)
 
-          if step_name
-            transaction { step step_name }
+          if cond
+            if_true(cond) { transaction(&dsl_bl) }
           else
             around(->(runner, _) {
               db.transaction(savepoint: true) do
@@ -20,11 +20,11 @@ module Pathway
           end
         end
 
-        def after_commit(step_name = nil, &dsl_bl)
-          raise 'must provide a step or a block but not both' if !step_name.nil? == block_given?
+        def after_commit(step_name = nil, if: nil, unless: nil, &)
+          cond, dsl_bl = _transact_opts(step_name, *%i[if unless].map { binding.local_variable_get(_1) }, &)
 
-          if step_name
-            after_commit { step step_name }
+          if cond
+            if_true(cond) { after_commit(&dsl_bl) }
           else
             around(->(runner, state) {
               dsl_copy = self.class::DSL.new(State.new(self, state.to_h.dup), self)
@@ -34,6 +34,26 @@ module Pathway
               end
             }, &dsl_bl)
           end
+        end
+
+        private
+
+        def _transact_opts(step_name, if_cond, unless_cond, &bl)
+          dsl = if !step_name.nil? == block_given?
+                  raise ArgumentError, 'must provide either a step or a block but not both'
+                else
+                  bl || proc { step step_name }
+                end
+
+          cond = if if_cond && unless_cond
+                   raise ArgumentError, 'options :if and :unless are mutually exclusive'
+                 elsif if_cond
+                   if_cond
+                 elsif unless_cond
+                   _callable(unless_cond) >> :!.to_proc
+                 end
+
+          return cond, dsl
         end
       end
 

@@ -1,3 +1,7 @@
+## [1.1.0] - 2025-05-25
+### Added
+- Added `:if` and `:unless` options for `:transaction` and `:after_commit` methods at `:sequel_models` plugin
+
 ## [1.0.0] - 2025-05-19
 ### Changed
 - Removed support for `Ruby` versions older than 3.0
