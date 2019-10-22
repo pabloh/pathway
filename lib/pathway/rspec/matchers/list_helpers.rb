@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Pathway
   module Rspec
     module ListHelpers

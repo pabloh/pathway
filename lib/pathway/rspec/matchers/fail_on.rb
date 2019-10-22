@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'pathway/rspec/matchers/list_helpers'
 
 RSpec::Matchers.define :fail_on do |input|

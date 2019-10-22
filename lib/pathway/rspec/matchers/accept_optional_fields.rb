@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'pathway/rspec/matchers/form_schema_helpers'
 
 RSpec::Matchers.define :accept_optional_fields do |*fields|

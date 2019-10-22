@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec::Matchers.define :succeed_on do |input|
   match do |operation|
     @operation, @input = operation, input
