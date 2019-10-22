@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'pathway/rspec/matchers/list_helpers'
 
 RSpec::Matchers.define :fail_on do |input|
@@ -51,7 +53,7 @@ RSpec::Matchers.define :fail_on do |input|
   end
 
   failure_message_when_negated do
-    'Did not to expected operation to fail but it did'
+    'Did not expected operation to fail but it did'
   end
 
   def failure?

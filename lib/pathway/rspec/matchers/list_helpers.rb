@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Pathway
   module Rspec
     module ListHelpers
@@ -5,7 +7,7 @@ module Pathway
         as_sentence(items.map(&:inspect))
       end
 
-      def as_sentence(items, connector: ", ", last_connector: " and ")
+      def as_sentence(items, connector: ', ', last_connector: ' and ')
         *rest, last = items
 
         result = String.new

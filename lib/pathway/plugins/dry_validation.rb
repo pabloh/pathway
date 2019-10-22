@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'dry/validation'
 
 module Pathway
@@ -76,8 +78,9 @@ module Pathway
         operation.auto_wire_options = auto_wire_options
       end
 
+      #:nocov:
       if Gem.loaded_specs['dry-validation'].version < Gem::Version.new('0.11')
-        fail "unsupported dry-validation gem version"
+        fail 'unsupported dry-validation gem version'
       elsif Gem.loaded_specs['dry-validation'].version < Gem::Version.new('0.12')
         DefaultFormClass = Dry::Validation::Schema::Form
 
@@ -99,6 +102,7 @@ module Pathway
       else
         fail 'unsupported dry-validation gem version'
       end
+      #:nocov:
     end
   end
 end
