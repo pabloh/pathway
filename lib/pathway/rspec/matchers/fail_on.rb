@@ -53,7 +53,7 @@ RSpec::Matchers.define :fail_on do |input|
   end
 
   failure_message_when_negated do
-    'Did not to expected operation to fail but it did'
+    'Did not expected operation to fail but it did'
   end
 
   def failure?

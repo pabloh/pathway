@@ -12,11 +12,11 @@ module Pathway
       end
 
       def were_was(list)
-        list.size > 1 ? "were" : "was"
+        list.size > 1 ? 'were' : 'was'
       end
 
       def pluralize_fields
-        @fields.size > 1 ? "fields" : "field"
+        @fields.size > 1 ? 'fields' : 'field'
       end
     end
   end

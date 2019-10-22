@@ -7,7 +7,7 @@ module Pathway
         as_sentence(items.map(&:inspect))
       end
 
-      def as_sentence(items, connector: ", ", last_connector: " and ")
+      def as_sentence(items, connector: ', ', last_connector: ' and ')
         *rest, last = items
 
         result = String.new

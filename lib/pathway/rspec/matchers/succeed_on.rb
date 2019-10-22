@@ -31,7 +31,7 @@ RSpec::Matchers.define :succeed_on do |input|
   end
 
   failure_message_when_negated do
-    "Did not to expected operation to be successful but it was"
+    'Did not to expected operation to be successful but it was'
   end
 
   def success?
