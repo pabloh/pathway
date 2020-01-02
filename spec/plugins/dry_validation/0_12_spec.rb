@@ -1,10 +1,13 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'dry/validation/version'
+
+return unless Dry::Validation::VERSION =~ /^0\.1[23]/
 
 module Pathway
   module Plugins
-    describe 'DryValidation' do
+    describe 'DryValidation::V0_12' do
       class SimpleOperation < Operation
         plugin :dry_validation
 
@@ -34,14 +37,8 @@ module Pathway
 
       SimpleModel = Struct.new(:name, :email, :role, :profile)
 
-      if Dry::Validation.respond_to? :Params
-        SimpleForm = Dry::Validation.Params do
-          required(:age).filled(:int?)
-        end
-      else
-        SimpleForm = Dry::Validation.Form do
-          required(:age).filled(:int?)
-        end
+      SimpleForm = Dry::Validation.Params do
+        required(:age).filled(:int?)
       end
 
       class OperationWithOpt < Operation
@@ -81,7 +78,7 @@ module Pathway
 
         context "when no form's been setup" do
           it "returns a default empty form" do
-            expect(operation_class.form_class).to eq(DryValidation::DefaultFormClass)
+            expect(operation_class.form_class).to eq(Dry::Validation::Params)
           end
         end
 
@@ -162,7 +159,7 @@ module Pathway
           end
 
           it "extends from the default form class" do
-            expect(operation_class.form_class).to be < DryValidation::DefaultFormClass
+            expect(operation_class.form_class).to be < Dry::Validations::Params
           end
 
           it "uses the rules defined at the passed block" do

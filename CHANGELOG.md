@@ -1,3 +1,7 @@
+## [0.11.0] - 2020-01-02
+### Changed
+- Add support for `dry-validation` 1.0 and above
+
 ## [0.10.0] - 2019-10-06
 ### Changed
 - Restrict support for `dry-validation` from 0.11.0 up to (excluding) 1.0.0
