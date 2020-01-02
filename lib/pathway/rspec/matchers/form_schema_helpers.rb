@@ -7,8 +7,14 @@ module Pathway
     module FormSchemaHelpers
       include FieldListHelpers
 
-      def rules
-        @form.rules
+      if defined?(::Dry::Validation::Contract)
+        def rules
+          @form.schema.rules
+        end
+      else
+        def rules
+          @form.rules
+        end
       end
 
       def not_defined_list
