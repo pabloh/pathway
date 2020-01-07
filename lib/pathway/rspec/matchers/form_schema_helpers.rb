@@ -29,12 +29,20 @@ module Pathway
         @optional ||= @fields.select { |field| optional?(field) }
       end
 
+      def null_value_allowed
+        @null_value_allowed ||= @fields.select { |field| null_value_allowed?(field) }
+      end
+
+      def null_value_disallowed
+        @null_value_disallowed ||= @fields.select { |field| null_value_disallowed?(field) }
+      end
+
       def not_required
         @not_required ||= defined - required
       end
 
       def not_optional
-        @not_required ||= defined - optional
+        @not_optional ||= defined - optional
       end
 
       def not_defined
@@ -59,6 +67,18 @@ module Pathway
 
           left.type == :predicate && left.name == :key? && left.args.first == field
         end
+      end
+
+      def null_value_allowed?(field)
+        rule = rules[field]&.right&.rule
+        predicate = rule&.left
+        predicate.present? && predicate.type == :not && predicate.rules&.first&.name == :nil?
+      end
+
+      def null_value_disallowed?(field)
+        rule = rules[field]&.right&.rule
+        predicate = rule&.left
+        predicate.present? && predicate.type == :predicate && predicate.name == :filled?
       end
     end
   end
