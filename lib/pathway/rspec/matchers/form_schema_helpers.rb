@@ -21,6 +21,14 @@ module Pathway
         "#{as_list(not_defined)} #{were_was(not_defined)} not defined" if not_defined.any?
       end
 
+      def accepting_null_list
+        "#{as_list(null_value_allowed)} #{were_was(null_value_allowed)} accepting null value" if null_value_allowed.any?
+      end
+
+      def not_accepting_null_list
+        "#{as_list(null_value_disallowed)} #{were_was(null_value_disallowed)} not accepting null value" if null_value_disallowed.any?
+      end
+
       def required
         @required ||= @fields.select { |field| required?(field) }
       end
@@ -67,6 +75,14 @@ module Pathway
 
           left.type == :predicate && left.name == :key? && left.args.first == field
         end
+      end
+
+      def allowing_null_values_matches?
+        @allowing_null_values ? @fields.all? { |field| null_value_allowed?(field) } : true
+      end
+
+      def not_allowing_null_values_matches?
+        @not_allowing_null_values ? @fields.all? { |field| null_value_disallowed?(field) } : true
       end
 
       def null_value_allowed?(field)

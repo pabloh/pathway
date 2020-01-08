@@ -47,28 +47,16 @@ RSpec::Matchers.define :require_fields do |*fields|
     "#{as_list(not_required)} #{were_was(not_required)} not required" if not_required.any?
   end
 
-  def accepting_null_list
-    "#{as_list(null_value_allowed)} #{were_was(null_value_allowed)} accepting null value" if null_value_allowed.any?
-  end
-
-  def not_accepting_null_list
-    "#{as_list(null_value_disallowed)} #{were_was(null_value_disallowed)} not accepting null value" if null_value_disallowed.any?
-  end
-
   chain :allowing_null_values do
+    fail 'Cannot use allowing_null_values and not_allowing_null_values at the same time' if @not_allowing_null_values
+
     @allowing_null_values = true
   end
 
   chain :not_allowing_null_values do
+    fail 'Cannot use allowing_null_values and not_allowing_null_values at the same time' if @allowing_null_values
+
     @not_allowing_null_values = true
-  end
-
-  def allowing_null_values_matches?
-    @allowing_null_values ? @fields.all? { |field| null_value_allowed?(field) } : true
-  end
-
-  def not_allowing_null_values_matches?
-    @not_allowing_null_values ? @fields.all? { |field| null_value_disallowed?(field) } : true
   end
 end
 
