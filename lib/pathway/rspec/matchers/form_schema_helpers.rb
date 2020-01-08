@@ -22,11 +22,11 @@ module Pathway
       end
 
       def accepting_null_list
-        "#{as_list(null_value_allowed)} #{were_was(null_value_allowed)} accepting null value" if null_value_allowed.any?
+        "#{as_list(null_value_allowed)} #{were_was(null_value_allowed)} accepting null values" if null_value_allowed.any?
       end
 
       def not_accepting_null_list
-        "#{as_list(null_value_disallowed)} #{were_was(null_value_disallowed)} not accepting null value" if null_value_disallowed.any?
+        "#{as_list(null_value_disallowed)} #{were_was(null_value_disallowed)} not accepting null values" if null_value_disallowed.any?
       end
 
       def required

@@ -13,6 +13,8 @@ RSpec::Matchers.define :accept_optional_fields do |*fields|
   end
 
   match_when_negated do |form|
+    raise NotImplementedError, 'expect().not_to accept_optional_fields.not_allowing_null_values is not supported.' if @not_allowing_null_values
+
     @form, @fields = form, fields
 
     not_defined.empty? &&
@@ -28,7 +30,10 @@ RSpec::Matchers.define :accept_optional_fields do |*fields|
   end
 
   failure_message do
-    "Expected to accept #{field_list} as optional #{pluralize_fields} but " +
+    null_value_allowed = @allowing_null_values ? ' allowing null values' : ''
+    null_value_disallowed = @not_allowing_null_values ? ' not allowing null values' : ''
+
+    "Expected to accept #{field_list} as optional #{pluralize_fields} #{null_value_allowed}#{null_value_disallowed} but " +
       [not_optional_list, not_defined_list, accepting_null_list, not_accepting_null_list].compact.join("; and ")
   end
 
