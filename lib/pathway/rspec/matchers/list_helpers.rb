@@ -3,8 +3,8 @@
 module Pathway
   module Rspec
     module ListHelpers
-      def as_list(items)
-        as_sentence(items.map(&:inspect))
+      def as_list(items, **kwargs)
+        as_sentence(items.map(&:inspect), **kwargs)
       end
 
       def as_sentence(items, connector: ', ', last_connector: ' and ')
