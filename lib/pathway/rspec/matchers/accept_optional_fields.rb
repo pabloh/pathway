@@ -13,14 +13,11 @@ RSpec::Matchers.define :accept_optional_fields do |*fields|
   end
 
   match_when_negated do |form|
-    raise NotImplementedError, 'expect().not_to accept_optional_fields.not_allowing_null_values is not supported.' if @not_allowing_null_values
+    raise NotImplementedError, 'expect().not_to accept_optional_fields.not_allowing_null_values is not supported.' if @allowing_null_values || @not_allowing_null_values
 
     @form, @fields = form, fields
 
-    not_defined.empty? &&
-      optional.empty? &&
-      allowing_null_values_matches? &&
-      not_allowing_null_values_matches?
+    not_defined.empty? && optional.empty?
   end
 
   description do
@@ -33,13 +30,13 @@ RSpec::Matchers.define :accept_optional_fields do |*fields|
     null_value_allowed = @allowing_null_values ? ' allowing null values' : ''
     null_value_disallowed = @not_allowing_null_values ? ' not allowing null values' : ''
 
-    "Expected to accept #{field_list} as optional #{pluralize_fields} #{null_value_allowed}#{null_value_disallowed} but " +
+    "Expected to accept #{field_list} as optional #{pluralize_fields}#{null_value_allowed}#{null_value_disallowed} but " +
       [not_optional_list, not_defined_list, accepting_null_list, not_accepting_null_list].compact.join("; and ")
   end
 
   failure_message_when_negated do
     "Did not expect to accept #{field_list} as optional #{pluralize_fields} but " +
-      [optional_list, not_defined_list, accepting_null_list, not_accepting_null_list].compact.join("; and ")
+      [optional_list, not_defined_list].compact.join("; and ")
   end
 
   include Pathway::Rspec::FormSchemaHelpers
@@ -53,13 +50,13 @@ RSpec::Matchers.define :accept_optional_fields do |*fields|
   end
 
   chain :allowing_null_values do
-    fail 'Cannot use allowing_null_values and not_allowing_null_values at the same time' if @not_allowing_null_values
+    fail 'cannot use allowing_null_values and not_allowing_null_values at the same time' if @not_allowing_null_values
 
     @allowing_null_values = true
   end
 
   chain :not_allowing_null_values do
-    fail 'Cannot use allowing_null_values and not_allowing_null_values at the same time' if @allowing_null_values
+    fail 'cannot use allowing_null_values and not_allowing_null_values at the same time' if @allowing_null_values
 
     @not_allowing_null_values = true
   end

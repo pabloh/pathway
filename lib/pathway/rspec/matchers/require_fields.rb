@@ -13,14 +13,11 @@ RSpec::Matchers.define :require_fields do |*fields|
   end
 
   match_when_negated do |form|
-    raise NotImplementedError, 'expect().not_to require_fields.not_allowing_null_values is not supported.' if @not_allowing_null_values
+    raise NotImplementedError, 'expect().not_to require_fields.not_allowing_null_values is not supported.' if @allowing_null_values || @not_allowing_null_values
 
     @form, @fields = form, fields
 
-    not_defined.empty? &&
-      required.empty? &&
-      allowing_null_values_matches? &&
-      not_allowing_null_values_matches?
+    not_defined.empty? && required.empty?
   end
 
   description do
@@ -39,7 +36,7 @@ RSpec::Matchers.define :require_fields do |*fields|
 
   failure_message_when_negated do
     "Did not expect to require #{field_list} as #{pluralize_fields} but " +
-      [required_list, not_defined_list, accepting_null_list, not_accepting_null_list].compact.join("; and ")
+      [required_list, not_defined_list].compact.join("; and ")
   end
 
   include Pathway::Rspec::FormSchemaHelpers
@@ -53,13 +50,13 @@ RSpec::Matchers.define :require_fields do |*fields|
   end
 
   chain :allowing_null_values do
-    fail 'Cannot use allowing_null_values and not_allowing_null_values at the same time' if @not_allowing_null_values
+    fail 'cannot use allowing_null_values and not_allowing_null_values at the same time' if @not_allowing_null_values
 
     @allowing_null_values = true
   end
 
   chain :not_allowing_null_values do
-    fail 'Cannot use allowing_null_values and not_allowing_null_values at the same time' if @allowing_null_values
+    fail 'cannot use allowing_null_values and not_allowing_null_values at the same time' if @allowing_null_values
 
     @not_allowing_null_values = true
   end
