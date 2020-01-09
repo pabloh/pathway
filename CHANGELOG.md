@@ -1,3 +1,7 @@
+## [0.11.1] - 2020-01-09
+### Changed
+- Improve custom `rspec` matchers for testing field presence on schemas
+
 ## [0.11.0] - 2020-01-02
 ### Changed
 - Add support for `dry-validation` 1.0 and above
