@@ -31,12 +31,13 @@ RSpec::Matchers.define :accept_optional_fields do |*fields|
     null_value_disallowed = @not_allowing_null_values ? ' not allowing null values' : ''
 
     "Expected to accept #{field_list} as optional #{pluralize_fields}#{null_value_allowed}#{null_value_disallowed} but " +
-      [not_optional_list, not_defined_list, accepting_null_list, not_accepting_null_list].compact.join("; and ")
+      as_sentence([not_optional_list, not_defined_list, accepting_null_list, not_accepting_null_list].compact,
+                  connector: '; ', last_connector: '; and ')
   end
 
   failure_message_when_negated do
     "Did not expect to accept #{field_list} as optional #{pluralize_fields} but " +
-      [optional_list, not_defined_list].compact.join("; and ")
+      [optional_list, not_defined_list].compact.join('; and ')
   end
 
   include Pathway::Rspec::FormSchemaHelpers
