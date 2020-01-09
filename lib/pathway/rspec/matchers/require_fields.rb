@@ -30,7 +30,7 @@ RSpec::Matchers.define :require_fields do |*fields|
     null_value_allowed = @allowing_null_values ? ' allowing null values' : ''
     null_value_disallowed = @not_allowing_null_values ? ' not allowing null values' : ''
 
-    "Expected to require #{field_list} as #{pluralize_fields}#{null_value_allowed}#{null_value_disallowed}  but " +
+    "Expected to require #{field_list} as #{pluralize_fields}#{null_value_allowed}#{null_value_disallowed} but " +
       as_sentence([not_required_list, not_defined_list, accepting_null_list, not_accepting_null_list].compact,
                   connector: '; ', last_connector: '; and ')
   end
