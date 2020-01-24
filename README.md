@@ -96,7 +96,7 @@ It's use is completely optional, but provides you with a basic schema to communi
 ```ruby
 class CreateNugget < Pathway::Operation
   def call(input)
-    validation = Form.call(input)
+    validation = Validator.call(input)
 
     if validation.ok?
       success(Nugget.create(validation.values))
@@ -135,7 +135,7 @@ class CreateNugget < Pathway::Operation
   context :current_user, notify: false
 
   def call(input)
-    validation = Form.call(input)
+    validation = Validator.call(input)
 
     if validation.valid?
       nugget = Nugget.create(owner: current_user, **validation.values)
@@ -322,21 +322,23 @@ Mind you, if you wish to activate a plugin for a number of operations you can ac
 
 This plugin provides integration with the [dry-validation](http://dry-rb.org/gems/dry-validation/) gem. I won't explain in detail how to use this library since is already extensively documented on its official website, but instead I'll assume certain knowledge of it, nonetheless, as you'll see in a moment, its API pretty self-explanatory.
 
-`dry-validation` provides a very simple way to define form (or schema) objects to process and validate our input. The provided custom `:validate` step allows you to run your input though a form to check your data is valid before continuing. When the input is invalid it will return an error object with type `:validation` and the reasons the validation failed on the `details` attribute. Is commonly the first step any operation runs.
+`dry-validation` provides a very simple way to define contract objects (conceptually very similar to form objects) to process and validate input. The provided custom `:validate` step allows you to run your input though a contract to check if your data is valid before carrying on. When the input is invalid it will return an error object of type `:validation` and the reasons the validation failed will be available at the `details` attribute. Is usually the first step an operation runs.
 
-When using this plugin we'll have to provide an already defined form to the step to use or we can also define one inline.
+When using this plugin we can provide an already defined contract to the step to use or we can also define it within the operation.
 Let's see a few examples:
 
 ```ruby
-NuggetForm = Dry::Validation.Form do
-  required(:owner).filled(:str?)
-  required(:price).filled(:int?)
+class NuggetContract < Dry::Validation::Contract
+  params
+    required(:owner).filled(:string)
+    required(:price).filled(:integer)
+  end
 end
 
 class CreateNugget < Pathway::Operation
   plugin :dry_validation
 
-  form NuggetForm
+  contract NuggetContract
 
   process do
     step :validate
@@ -347,15 +349,17 @@ class CreateNugget < Pathway::Operation
 end
 ```
 
-As it can be seen at the code above, the form is first created elsewhere, then is configured to be used by the operation (by calling `form NuggetForm`), and validate the input at the process block by calling `step :validate`.
+As is is shown above, the contract is defined first, then is configured it will be used by the operation by calling `contract NuggetContract`, and validate the input at the process block by placing the step `step :validate` inside the `process` block.
 
 ```ruby
 class CreateNugget < Pathway::Operation
   plugin :dry_validation
 
-  form do
-    required(:owner).filled(:str?)
-    required(:price).filled(:int?)
+  contract do
+    params do
+      required(:owner).filled(:string)
+      required(:price).filled(:integer)
+    end
   end
 
   process do
@@ -367,16 +371,36 @@ class CreateNugget < Pathway::Operation
 end
 ```
 
-Now, this second example is equivalent to the first one, but here we call `form` with a block instead and no parameter; this block will be use as definition body for a form object that will be stored internally. Thus keeping the form and operation at the same place, this is convenient when you have a rather simpler form and don't need to reuse it.
+Now, this second example is equivalent to the first one, but here we call `contract` with a block instead and no parameter; this block will be used as definition body for a contract class that will be stored internally. Thus keeping the contract and operation code at the same place, this is convenient when you have a rather simpler contract and don't need to reuse it.
 
-One interesting nuance to keep in mind regarding the inline block form is that, when doing operation inheritance, if the parent operation already has a form, the child operation will define a new one extending from the parent's. This is very useful to share form functionality among related operations in the same class hierarchy.
+One interesting nuance to keep in mind regarding the inline block contract is that, when doing operation inheritance, if the parent operation already has a contract, the child operation will define a new one inheriting from the parent's. This is very useful to share validation logic among related operations in the same class hierarchy.
 
-##### Form options
+As a side note, if your contract is simple enough and only have params, you can call the `params` method directly instead, the following code is essentially equivalent to previous example:
 
-If you are familiar with `dry-validation` you probably know it provides a way to [inject options](http://dry-rb.org/gems/dry-validation/basics/working-with-schemas/#injecting-external-dependencies) before calling the form instance.
+```ruby
+class CreateNugget < Pathway::Operation
+  plugin :dry_validation
 
-On those scenarios you must either use the `auto_wire_options: true` plugin argument, or specify how to map options from the execution state to the form when calling `step :validate`.
-Lets see and example for each case:
+  params do
+    required(:owner).filled(:string)
+    required(:price).filled(:integer)
+  end
+
+  process do
+    step :validate
+    step :create_nugget
+  end
+
+  # ...
+end
+```
+
+##### Contract options
+
+If you are familiar with `dry-validation` you probably know it provides a way to [inject options](https://dry-rb.org/gems/dry-validation/1.4/external-dependencies/) before calling the contract.
+
+On those scenarios you must either use the `auto_wire_options: true` plugin argument, or specify how to map options from the execution state to the contract when calling `step :validate`.
+Lets see and example for the first case:
 
 ```ruby
 class CreateNugget < Pathway::Operation
@@ -384,11 +408,17 @@ class CreateNugget < Pathway::Operation
 
   context :user_name
 
-  form do
-    configure { option :user_name }
+  contract do
+    option :user_name
 
-    required(:owner).filled(:str?, :eql?: user_name)
-    required(:price).filled(:int?)
+    params do
+      required(:owner).filled(:string)
+      required(:price).filled(:integer)
+    end
+
+    rule(:owner) do
+      key.failure("invalid owner") unless user_name == values[:owner]
+    end
   end
 
   process do
@@ -400,9 +430,11 @@ class CreateNugget < Pathway::Operation
 end
 ```
 
-Here the defined form needs a `:user_name` option, so we tell the operation to grab the attribute with the same name from the state by activating `:auto_wire_options`, afterwards, when the validation runs, the form will already have the user name available.
+Here the defined contract needs a `:user_name` option, so we tell the operation to grab the attribute with the same name from the state by activating `:auto_wire_options`, afterwards, when the validation runs, the contract will already have the user name available.
 
 Mind you, this option is `false` by default, so be sure to set it to `true` at `Pathway::Operation` if you'd rather have it enabled for all your operations.
+
+On the other hand, if for some reason the name of the contract's option and state attribute don't match, we can just pass `with: {...}` when calling to `step :validate`, indicating how to wire the attributes, the following example illustrates just that:
 
 ```ruby
 class CreateNugget < Pathway::Operation
@@ -410,15 +442,21 @@ class CreateNugget < Pathway::Operation
 
   context :current_user_name
 
-  form do
-    configure { option :user_name }
+  contract do
+    option :user_name
 
-    required(:owner).filled(:str?, :eql?: user_name)
-    required(:price).filled(:int?)
+    params do
+      required(:owner).filled(:string)
+      required(:price).filled(:integer)
+    end
+
+    rule(:owner) do
+      key.failure("invalid owner") unless user_name == values[:owner]
+    end
   end
 
   process do
-    step :validate, with: { user_name: :current_user_name } # Inject :user_name to the form object with the state's :current_user_name
+    step :validate, with: { user_name: :current_user_name } # Inject :user_name to the contract object with the state's :current_user_name
     step :create_nugget
   end
 
@@ -426,9 +464,11 @@ class CreateNugget < Pathway::Operation
 end
 ```
 
-On the other hand, if for some reason the name of the form's option and state attribute don't match, we can just pass `with: {...}` when calling to `step :validate`, indicating how to wire the attributes, the example above illustrates just that.
-
 The `with:` parameter can always be specified, at `step :validate`, and allows you to override the default mapping regardless if auto-wiring is active or not.
+
+##### Older versions of `dry-validation`
+
+Pathway supports the `dry-validation` gem down to version `0.11` (inclusive), in case you still have unmigrated code. When using versions bellow `1.0` the concept of contract is not present and instead of calling the `contract` method to setup your validation logic you must use the `form` method instead. Everything else remains the same, except, obviously that you would use `dry-definition`'s [old API](https://dry-rb.org/gems/dry-validation/0.13/) which is a bit different from the current one.
 
 #### `SimpleAuth` plugin
 
@@ -673,7 +713,7 @@ require 'pathway/rspec'
 
 #### Rspec matchers
 
-Pathway provide a few matchers in order to tests your operation easier.
+Pathway provides a few matchers in order to tests your operation easier.
 Let's go through a full example and break it up in the following subsections:
 
 ```ruby
@@ -682,10 +722,10 @@ Let's go through a full example and break it up in the following subsections:
 class CreateNugget < Pathway::Operation
   plugin :dry_validation
 
-  form do
-    required(:owner).filled(:str?)
-    required(:price).filled(:int?)
-    optional(:disabled).maybe(:bool?)
+  params do
+    required(:owner).filled(:string)
+    required(:price).filled(:integer)
+    optional(:disabled).maybe(:bool)
   end
 
   process do
@@ -721,8 +761,8 @@ describe CreateNugget do
     end
   end
 
-  describe '.form' do
-    subject(:form) { CreateNugget.form }
+  describe '.contract' do
+    subject(:contract) { CreateNugget.build_contract }
 
     it { is_expected.to require_fields(:owner, :price) }
     it { is_expected.to accept_optional_field(:disabled) }
@@ -739,13 +779,13 @@ The assertion it performs is simply is that the operation was successful, also y
 
 This second matcher is analog to `succeed_on` but it asserts that operation execution was a failure instead. Also if you return an error object, and you need to, you can assert the error type using the `type` chain method (aliased as `and_type` and `with_type`); the error message (`and_message`, `with_message` or `message`); and the error details (`and_details`, `with_details` or `details`). Mind you, the chain methods for the message and details accept nested matchers while the `type` chain can only test by equality.
 
-##### form matchers
+##### contract/form matchers
 
-Finally we can see that we are also testing the operation's form, implemented here with the `dry-validation` gem.
+Finally we can see that we are also testing the operation's contract (or form), implemented here with the `dry-validation` gem.
 
-Two more matchers are provided when we use this gem: `require_fields` (aliased `require_field`) to test when form is expected to define a required set of fields, and `accept_optional_fields` (aliased `accept_optional_field`) to test when a form must define certain set of optional fields.
+Two more matchers are provided: `require_fields` (aliased `require_field`) to test when a contract is expected to define a required set of fields, and `accept_optional_fields` (aliased `accept_optional_field`) to test when a contract must define a certain set of optional fields, both the contract class (at operation class method `contract_class`) or an instance (operation class method `build_contract`) can be provided.
 
-These matchers are only useful when using `dry-validation` and will very likely be extracted to its own gem in the future.
+These matchers are only useful when using `dry-validation` (on every version newer or equal to `0.11.0`) and will probably be extracted to their own gem in the future.
 
 ## Development
 
