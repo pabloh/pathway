@@ -468,7 +468,7 @@ The `with:` parameter can always be specified, at `step :validate`, and allows y
 
 ##### Older versions of `dry-validation`
 
-Pathway supports the `dry-validation` gem down to version `0.11` (inclusive), in case you still have unmigrated code. When using versions bellow `1.0` the concept of contract is not present and instead of calling the `contract` method to setup your validation logic you must use the `form` method instead. Everything else remains the same, except, obviously that you would use `dry-definition`'s [old API](https://dry-rb.org/gems/dry-validation/0.13/) which is a bit different from the current one.
+Pathway supports the `dry-validation` gem down to version `0.11` (inclusive) in case you still have unmigrated code. When using versions bellow `1.0` the concept of contract is not present and instead of calling the `contract` method to setup your validation logic you must use the `form` method. Everything else remains the same except, obviously, that you would have to use `dry-definition`'s [old API](https://dry-rb.org/gems/dry-validation/0.13/) which is a bit different from the current one.
 
 #### `SimpleAuth` plugin
 
