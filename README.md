@@ -329,7 +329,7 @@ Let's see a few examples:
 
 ```ruby
 class NuggetContract < Dry::Validation::Contract
-  params
+  params do
     required(:owner).filled(:string)
     required(:price).filled(:integer)
   end
