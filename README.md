@@ -314,8 +314,8 @@ class SomeOperation < BaseOperation
 end
 ```
 
-The plugin name must be specified as a `Symbol` (or also as the `Module` where is implemented, but more on that later), and can it take parameters next to the plugin's name.
-When activated it will enrich your operations with new instance and class methods plus extra customs step for the process DSL.
+The plugin name must be specified as a `Symbol` (or also as the `Module` where is implemented, but more on that later), and it can take parameters next to the plugin's name.
+When activated it will enrich your operations with new instance and class methods plus extra customs step for the `process` DSL.
 
 Mind you, if you wish to activate a plugin for a number of operations you can activate it for all of them directly on the `Pathway::Operation` class, or you can create your own base operation and all its descendants will inherit the base class' plugins.
 
