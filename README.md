@@ -91,7 +91,7 @@ end
 #### Error objects
 
 `Pathway::Error` is a helper class to represent the error description from an failed operation execution (and can be used also for pattern matching as we'll see later).
-It's use is completely optional, but provides you with a basic schema to communicate what when wrong. You can instantiate it by calling `new` on the class itself or using the helper method `error` provided in the operation class:
+Its use is completely optional, but provides you with a basic schema to communicate what when wrong. You can instantiate it by calling `new` on the class itself or using the helper method `error` provided by the operation class:
 
 ```ruby
 class CreateNugget < Pathway::Operation
@@ -101,26 +101,27 @@ class CreateNugget < Pathway::Operation
     if validation.ok?
       success(Nugget.create(validation.values))
     else
-      error(type: :validation, message: 'Invalid input', details: validation.errors)
+      error(:validation, message: 'Invalid input', details: validation.errors)
     end
   end
 end
 ```
 
-As you can see `error(...)` expects `type:`, `message:` and `details` keyword arguments; `type:` is the only mandatory, the other ones can be omitted and have default values. Also `type` should be a `Symbol`, `message:` a `String` and `details:` can be a `Hash` or any other structure you see fit.
+As you can see `error(...)` expects the `type` as the first parameter (and only the mandatory) then `message:` and `details` keyword arguments; these 2 last ones can be omitted and have default values. The type parameter must be a `Symbol`, `message:` a `String` and `details:` can be a `Hash` or any other structure you see fit.
 
-You then have accessors available on the error object to get the values back:
+Finally, the `Error` object have three accessors available to get the values back:
 
 ```ruby
 result = CreateNugget.new.call(foo: 'foobar')
 if result.failure?
   puts "#{result.error.type} error: #{result.error.message}"
+  puts "Error details: #{result.error.details}"
 end
 
 ```
 
 Mind you, `error(...)` creates an `Error` object wrapped into a `Pathway::Failure` so you don't have to do it yourself.
-If you decide to use `Pathway::Error.new(...)` directly, the expected arguments will be the same, but you will have to wrap the object before returning it.
+If you decide to use `Pathway::Error.new(...)` directly, you will have to pass all the arguments as keywords (including `type:`), and you will have to wrap the object before returning it.
 
 #### Initialization context
 
@@ -143,7 +144,7 @@ class CreateNugget < Pathway::Operation
       Notifier.notify(:new_nugget, nugget) if @notify
       success(nugget)
     else
-      error(type: :validation, message: 'Invalid input', details: validation.errors)
+      error(:validation, message: 'Invalid input', details: validation.errors)
     end
   end
 end
@@ -266,7 +267,7 @@ class CreateNugget < Pathway::Operation
     if validation.ok?
       state[:params] = validation.values
     else
-      error(type: :validation, details: validation.errors)
+      error(:validation, details: validation.errors)
     end
   end
 
