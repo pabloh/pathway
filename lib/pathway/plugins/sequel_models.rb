@@ -63,10 +63,13 @@ module Pathway
         delegate :db => :model_class
 
         def fetch_model(state, from: model_class, search_by: search_field, using: search_by, to: result_key, overwrite: false, error_message: nil)
-          error_message ||= if from != model_class
-                              Inflector.humanize(Inflector.underscore(Inflector.demodulize(from.name))) + ' not found'
-                            else
+          error_message ||= if (from == model_class)
                               model_not_found
+                            elsif from.respond_to?(:name) || from.respond_to?(:model)
+                              from_name = (from.respond_to?(:name) ? from : from.model).name
+                              Inflector.humanize(Inflector.underscore(Inflector.demodulize(from_name))) + ' not found'
+                            else
+                              'Register not found'
                             end
 
           if state[to].nil? || overwrite
