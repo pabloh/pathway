@@ -303,7 +303,8 @@ module Pathway
       end
 
       describe '#fetch_model' do
-        let(:from_model) { double(name: 'Model') }
+        let(:other_model) { double(name: 'OtherModel') }
+        let(:dataset) { double(model: other_model) }
         let(:object) { double }
 
         it "fetches an instance through 'model_class' into result key" do
@@ -312,18 +313,31 @@ module Pathway
           expect(operation.fetch_model(input: {email: key}).value[:my_model]).to eq(object)
         end
 
-        it "fetches an instance through 'model_class' and sets result key using an overrided search column, input key and 'from' model when provided" do
-          expect(from_model).to receive(:first).with(pk: 'foo').and_return(object)
-          expect(MyModel).to_not receive(:first)
+        context "when proving and external repository through 'from:'" do
+          it "fetches an instance through 'model_class' and sets result key using an overrided search column, input key and 'from' model class" do
+            expect(other_model).to receive(:first).with(pk: 'foo').and_return(object)
+            expect(MyModel).to_not receive(:first)
 
-          state  = { input: { myid: 'foo' } }
-          result = operation
-                     .fetch_model(state, from: from_model, using: :myid, search_by: :pk)
-                     .value[:my_model]
+            state  = { input: { myid: 'foo' } }
+            result = operation
+                       .fetch_model(state, from: other_model, using: :myid, search_by: :pk)
+                       .value[:my_model]
 
-          expect(result).to eq(object)
+            expect(result).to eq(object)
+          end
+
+          it "fetches an instance through 'model_class' and sets result key using an overrided search column, input key and 'from' dataset" do
+            expect(dataset).to receive(:first).with(pk: 'foo').and_return(object)
+            expect(MyModel).to_not receive(:first)
+
+            state  = { input: { myid: 'foo' } }
+            result = operation
+                       .fetch_model(state, from: dataset, using: :myid, search_by: :pk)
+                       .value[:my_model]
+
+            expect(result).to eq(object)
+          end
         end
-
 
         it "fetches an instance through 'model_class' and sets result key using an overrided search column and input key with only :search_by is provided" do
           expect(MyModel).to receive(:first).with(name: 'foobar').and_return(object)

@@ -1,3 +1,7 @@
+## [0.11.2] - 2020-07-22
+### Changed
+- Improve `from:` option for `:fetch_model` step, at `:sequel_models` plugin, to also accept a Sequel Dataset
+
 ## [0.11.1] - 2020-01-09
 ### Changed
 - Improve custom `rspec` matchers for testing field presence on schemas
