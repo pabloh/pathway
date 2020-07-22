@@ -1,3 +1,7 @@
+## [0.11.3] - 2020-07-22
+### Changed
+- Use default error message on `:fetch_model` step, at `:sequel_models` plugin, if model type cannot be determined
+
 ## [0.11.2] - 2020-07-22
 ### Changed
 - Improve `from:` option for `:fetch_model` step, at `:sequel_models` plugin, to also accept a Sequel Dataset

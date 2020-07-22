@@ -68,8 +68,6 @@ module Pathway
                             elsif from.respond_to?(:name) || from.respond_to?(:model)
                               from_name = (from.respond_to?(:name) ? from : from.model).name
                               Inflector.humanize(Inflector.underscore(Inflector.demodulize(from_name))) + ' not found'
-                            else
-                              'Register not found'
                             end
 
           if state[to].nil? || overwrite
