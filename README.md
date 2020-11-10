@@ -273,11 +273,11 @@ class CreateNugget < Pathway::Operation
 
   def create_nugget(:params, **)
     Nugget.create(owner: current_user, **params)
-  def
+  end
 
   def notify(:nugget, **)
     Notifier.notify(:new_nugget, nugget)
-  else
+  end
 end
 ```
 
