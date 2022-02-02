@@ -62,7 +62,7 @@ module Pathway
         delegate %i[model_class search_field model_not_found] => 'self.class'
         delegate :db => :model_class
 
-        def fetch_model(state, from: model_class, search_by: search_field, using: search_by, to: result_key, overwrite: false, error_message: nil)
+        def fetch_model(state, from: model_class, search_by: search_field, using: search_by, to: result_key, overwrite: false, error_message: nil, **)
           error_message ||= if (from == model_class)
                               model_not_found
                             elsif from.respond_to?(:name) || from.respond_to?(:model)
@@ -85,7 +85,7 @@ module Pathway
       end
 
       def self.apply(operation, model: nil, **args)
-        operation.model(model, args) if model
+        operation.model(model, **args) if model
       end
     end
   end

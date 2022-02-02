@@ -52,7 +52,7 @@ module Pathway
           delegate %i[build_contract contract_options auto_wire_options] => 'self.class'
           alias :contract :build_contract
 
-          def validate(state, with: nil)
+          def validate(state, with: nil, **)
             if auto_wire_options && contract_options.any?
               with ||= contract_options.zip(contract_options).to_h
             end
