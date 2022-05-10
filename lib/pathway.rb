@@ -9,7 +9,7 @@ require 'pathway/result'
 module Pathway
   Inflector = Dry::Inflector.new
   class Operation
-    def self.plugin(name, *args)
+    def self.plugin(name, *args, **kwargs)
       require "pathway/plugins/#{Inflector.underscore(name)}" if name.is_a?(Symbol)
 
       plugin = name.is_a?(Module) ? name : Plugins.const_get(Inflector.camelize(name))
@@ -18,7 +18,7 @@ module Pathway
       self.include plugin::InstanceMethods if plugin.const_defined? :InstanceMethods
       self::DSL.include plugin::DSLMethods if plugin.const_defined? :DSLMethods
 
-      plugin.apply(self, *args) if plugin.respond_to?(:apply)
+      plugin.apply(self, *args, **kwargs) if plugin.respond_to?(:apply)
     end
 
     def self.inherited(subclass)
@@ -137,18 +137,18 @@ module Pathway
         end
 
         # Execute step and preserve the former state
-        def step(callable, *args)
+        def step(callable, *args, **kwargs)
           bl = _callable(callable)
 
-          @result = @result.tee { |state| bl.call(state, *args) }
+          @result = @result.tee { |state| bl.call(state, *args, **(state.to_h.merge(kwargs))) }
         end
 
         # Execute step and modify the former state setting the key
-        def set(callable, *args, to: @operation.result_key)
+        def set(callable, *args, to: @operation.result_key, **kwargs)
           bl = _callable(callable)
 
           @result = @result.then do |state|
-            wrap(bl.call(state, *args))
+            wrap(bl.call(state, *args, **(state.to_h.merge(kwargs))))
               .then { |value| state.update(to => value) }
           end
         end
@@ -162,20 +162,20 @@ module Pathway
         def around(wrapper, &steps)
           @result.then do |state|
             seq = -> (dsl = self) { @result = dsl.run(&steps) }
-            _callable(wrapper).call(seq, state)
+            _callable(wrapper).call(seq, state, **state.to_h)
           end
         end
 
         def if_true(cond, &steps)
           cond = _callable(cond)
           around(-> seq, state {
-            seq.call if cond.call(state)
+            seq.call if cond.call(state, **state.to_h)
           }, &steps)
         end
 
         def if_false(cond, &steps)
           cond = _callable(cond)
-          if_true(-> state { !cond.call(state) }, &steps)
+          if_true(-> state { !cond.call(state, **state.to_h) }, &steps)
         end
 
         alias_method :sequence, :around
@@ -190,9 +190,25 @@ module Pathway
         def _callable(callable)
           case callable
           when Proc
-            -> *args { @operation.instance_exec(*args, &callable) }
+            -> *args, ** { @operation.instance_exec(*args, &callable) }
           when Symbol
-            -> *args { @operation.send(callable, *args) }
+            -> *args, **kwargs do
+              has_keyword_args    = @operation.class.instance_method(callable).parameters.any? { |arg| [:keyreq, :key, :keyrest].include?(arg[0]) }
+              has_positional_args = @operation.class.instance_method(callable).parameters.any? { |arg| [:req, :opt, :rest].include?(arg[0])}
+              if has_positional_args
+                if has_keyword_args
+                  @operation.send(callable, *args, **kwargs)
+                else
+                  @operation.send(callable, *args)
+                end
+              else
+                if has_keyword_args
+                  @operation.send(callable, **kwargs)
+                else
+                  @operation.send(callable)
+                end
+              end
+            end
           else
             callable
           end

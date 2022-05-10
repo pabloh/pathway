@@ -12,7 +12,7 @@ module Pathway
       end
 
       module InstanceMethods
-        def authorize(state, using: nil)
+        def authorize(state, using: nil, **)
           auth_state = if using.is_a?(Array)
                          authorize_with(*state.values_at(*using))
                        else
