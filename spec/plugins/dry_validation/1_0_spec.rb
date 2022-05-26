@@ -26,11 +26,12 @@ module Pathway
 
         private
 
-        def fetch_profile(params:,**)
-          wrap_if_present(repository.fetch(params))
+        def fetch_profile(state)
+          wrap_if_present(repository.fetch(state[:params]))
         end
 
-        def create_model(params:, profile:,**)
+        def create_model(state)
+          params, profile = state.values_at(:params, :profile)
           SimpleModel.new(*params.values, user.role, profile)
         end
       end

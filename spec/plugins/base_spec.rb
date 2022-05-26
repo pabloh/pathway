@@ -34,8 +34,8 @@ module Pathway
           state[:params] = @validator.call(state)
         end
 
-        def get_value(params:, **)
-          @back_end.call(params)
+        def get_value(state)
+          @back_end.call(state[:params])
         end
 
         def get_aux_value(state)
@@ -68,7 +68,8 @@ module Pathway
       subject(:operation) { OperationWithSteps.new(ctx) }
 
       before do
-        allow(validator).to receive(:call) do |input:, **|
+        allow(validator).to receive(:call) do |state|
+          input = state[:input]
           input.key?(:foo) ? input : Result.failure(:validation)
         end
 

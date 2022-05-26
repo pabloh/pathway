@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'ruby2_keywords'
 require 'forwardable'
 require 'dry/inflector'
 require 'contextualizer'
@@ -9,21 +10,23 @@ require 'pathway/result'
 module Pathway
   Inflector = Dry::Inflector.new
   class Operation
-    def self.plugin(name, *args)
-      require "pathway/plugins/#{Inflector.underscore(name)}" if name.is_a?(Symbol)
+    class << self
+      ruby2_keywords def plugin(name, *args)
+        require "pathway/plugins/#{Inflector.underscore(name)}" if name.is_a?(Symbol)
 
-      plugin = name.is_a?(Module) ? name : Plugins.const_get(Inflector.camelize(name))
+        plugin = name.is_a?(Module) ? name : Plugins.const_get(Inflector.camelize(name))
 
-      self.extend plugin::ClassMethods if plugin.const_defined? :ClassMethods
-      self.include plugin::InstanceMethods if plugin.const_defined? :InstanceMethods
-      self::DSL.include plugin::DSLMethods if plugin.const_defined? :DSLMethods
+        self.extend plugin::ClassMethods if plugin.const_defined? :ClassMethods
+        self.include plugin::InstanceMethods if plugin.const_defined? :InstanceMethods
+        self::DSL.include plugin::DSLMethods if plugin.const_defined? :DSLMethods
 
-      plugin.apply(self, *args) if plugin.respond_to?(:apply)
-    end
+        plugin.apply(self, *args) if plugin.respond_to?(:apply)
+      end
 
-    def self.inherited(subclass)
-      super
-      subclass.const_set :DSL, Class.new(self::DSL)
+      def inherited(subclass)
+        super
+        subclass.const_set :DSL, Class.new(self::DSL)
+      end
     end
 
     class DSL
@@ -90,7 +93,7 @@ module Pathway
           end
         end
 
-        def call(ctx, *params)
+        ruby2_keywords def call(ctx, *params)
           new(ctx).call(*params)
         end
 
@@ -137,7 +140,7 @@ module Pathway
         end
 
         # Execute step and preserve the former state
-        def step(callable, *args)
+        ruby2_keywords def step(callable, *args)
           bl = _callable(callable)
 
           @result = @result.tee { |state| bl.call(state, *args) }
@@ -190,9 +193,9 @@ module Pathway
         def _callable(callable)
           case callable
           when Proc
-            -> *args { @operation.instance_exec(*args, &callable) }
+            -> *args { @operation.instance_exec(*args, &callable) }.ruby2_keywords
           when Symbol
-            -> *args { @operation.send(callable, *args) }
+            -> *args { @operation.send(callable, *args) }.ruby2_keywords
           else
             callable
           end

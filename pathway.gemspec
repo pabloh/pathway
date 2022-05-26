@@ -31,10 +31,11 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "dry-inflector", ">= 0.1.0"
   spec.add_dependency "contextualizer", "~> 0.0.4"
+  spec.add_dependency "ruby2_keywords"
 
   spec.add_development_dependency "dry-validation", ">= 0.11"
   spec.add_development_dependency "bundler", "~> 2.3.7"
-  spec.add_development_dependency "sequel", "~> 5.25.0"
+  spec.add_development_dependency "sequel", "~> 5.0"
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "rspec", "~> 3.11"
   spec.add_development_dependency "simplecov-lcov", '~> 0.8.0'

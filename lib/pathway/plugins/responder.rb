@@ -4,8 +4,8 @@ module Pathway
   module Plugins
     module Responder
       module ClassMethods
-        def call(ctx, *params, &bl)
-          result = super(ctx, *params)
+        ruby2_keywords def call(*args, &bl)
+          result = super(*args)
           block_given? ? Responder.respond(result, &bl) : result
         end
       end

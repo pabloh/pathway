@@ -19,7 +19,7 @@ module Pathway
             end
           end
 
-          def params(*args, &block)
+          ruby2_keywords def params(*args, &block)
             contract { params(*args, &block) }
           end
 
@@ -29,8 +29,8 @@ module Pathway
             @builded_contract = @contract_options.empty? && klass.schema ? klass.new : nil
           end
 
-          def build_contract(opts = {})
-            @builded_contract || contract_class.new(opts)
+          def build_contract(**opts)
+            @builded_contract || contract_class.new(**opts)
           end
 
           def inherited(subclass)
@@ -57,12 +57,12 @@ module Pathway
               with ||= contract_options.zip(contract_options).to_h
             end
             opts = Hash(with).map { |to, from| [to, state[from]] }.to_h
-            validate_with(state[:input], opts)
+            validate_with(state[:input], **opts)
               .then { |params| state.update(params: params) }
           end
 
-          def validate_with(input, opts = {})
-            result = contract(opts).call(input)
+          def validate_with(input, **opts)
+            result = contract(**opts).call(input)
 
             result.success? ? wrap(result.values.to_h) : error(:validation, details: result.errors.to_h)
           end

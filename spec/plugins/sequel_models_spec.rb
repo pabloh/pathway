@@ -39,8 +39,8 @@ module Pathway
           state[:my_model] = { model: state[:my_model] }
         end
 
-        def send_emails(my_model:,**)
-          @mailer.send_emails(my_model) if @mailer
+        def send_emails(state)
+          @mailer.send_emails(state[:my_model]) if @mailer
         end
       end
 
@@ -53,8 +53,8 @@ module Pathway
           end
         end
 
-        def chain_operation(input:,**)
-          MailerOperation.call(context, input)
+        def chain_operation(state)
+          MailerOperation.call(context, state[:input])
         end
       end
 
@@ -187,8 +187,8 @@ module Pathway
                 end
               end
 
-              def send_emails(my_model:,**)
-                @mailer.send_emails(my_model) if @mailer
+              def send_emails(state)
+                @mailer.send_emails(state[:my_model]) if @mailer
               end
             end
 
@@ -310,7 +310,7 @@ module Pathway
         it "fetches an instance through 'model_class' into result key" do
           expect(MyModel).to receive(:first).with(email: key).and_return(object)
 
-          expect(operation.fetch_model(input: {email: key}).value[:my_model]).to eq(object)
+          expect(operation.fetch_model({input: {email: key}}).value[:my_model]).to eq(object)
         end
 
         context "when proving and external repository through 'from:'" do
@@ -364,7 +364,7 @@ module Pathway
         it 'returns an error when no instance is found', :aggregate_failures do
           expect(MyModel).to receive(:first).with(email: key).and_return(nil)
 
-          result = operation.fetch_model(input: {email: key})
+          result = operation.fetch_model({input: {email: key}})
 
           expect(result).to be_an(Result::Failure)
           expect(result.error).to be_an(Pathway::Error)
@@ -375,7 +375,7 @@ module Pathway
         it 'returns an error without hitting the database when search key is nil', :aggregate_failures do
           expect(MyModel).to_not receive(:first)
 
-          result = operation.fetch_model(input: {email: nil})
+          result = operation.fetch_model({input: {email: nil}})
 
           expect(result).to be_an(Result::Failure)
           expect(result.error).to be_an(Pathway::Error)
