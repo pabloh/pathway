@@ -33,7 +33,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "contextualizer", "~> 0.0.4"
 
   spec.add_development_dependency "dry-validation", ">= 0.11"
-  spec.add_development_dependency "bundler", ">= 1.14.0"
+  spec.add_development_dependency "bundler", "~> 2.3.7"
   spec.add_development_dependency "sequel", "~> 5.25.0"
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "rspec", "~> 3.0"
