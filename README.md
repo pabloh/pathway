@@ -1,7 +1,7 @@
 # Pathway
 
 [![Gem Version](https://badge.fury.io/rb/pathway.svg)](https://badge.fury.io/rb/pathway)
-[![CircleCI](https://circleci.com/gh/pabloh/pathway/tree/master.svg?style=shield)](https://circleci.com/gh/pabloh/pathway/tree/master)
+[![Tests](https://github.com/pabloh/pathway/workflows/Tests/badge.svg)](https://github.com/oabloh/pathway/actions?query=workflow%3ATests)
 [![Coverage Status](https://coveralls.io/repos/github/pabloh/pathway/badge.svg?branch=master)](https://coveralls.io/github/pabloh/pathway?branch=master)
 
 Pathway encapsulates your business logic into simple operation objects (AKA application services on the [DDD](https://en.wikipedia.org/wiki/Domain-driven_design) lingo).
