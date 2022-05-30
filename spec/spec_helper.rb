@@ -2,12 +2,17 @@
 
 require 'bundler/setup'
 
-if ENV['REPORT_COVERAGE']
+if ENV['CI']
   require 'simplecov'
-  require 'coveralls'
+  require 'simplecov-lcov'
 
-  SimpleCov.formatter = Coveralls::SimpleCov::Formatter
   SimpleCov.start do
+    SimpleCov::Formatter::LcovFormatter.config do |c|
+      c.report_with_single_file = true
+      c.single_report_path = 'coverage/lcov.info'
+    end
+
+    formatter SimpleCov::Formatter::LcovFormatter
     add_filter '/spec/'
   end
 end

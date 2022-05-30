@@ -36,8 +36,9 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "bundler", "~> 2.3.7"
   spec.add_development_dependency "sequel", "~> 5.25.0"
   spec.add_development_dependency "rake", "~> 13.0"
-  spec.add_development_dependency "rspec", "~> 3.0"
-  spec.add_development_dependency "coveralls"
+  spec.add_development_dependency "rspec", "~> 3.11"
+  spec.add_development_dependency "simplecov-lcov", '~> 0.8.0'
+  spec.add_development_dependency "simplecov"
   spec.add_development_dependency "pry"
   spec.add_development_dependency "pry-byebug"
   spec.add_development_dependency "pry-doc"
