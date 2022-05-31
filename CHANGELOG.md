@@ -1,3 +1,8 @@
+## [0.12.0] - 2022-05-31
+### Changed
+- Improve compatibility with Ruby 3.0
+- Add plugin `:auto_deconstruct_state` to help migrating old apps to Ruby 3.0
+
 ## [0.11.3] - 2020-07-22
 ### Changed
 - Use default error message on `:fetch_model` step, at `:sequel_models` plugin, if model type cannot be determined
