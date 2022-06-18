@@ -84,8 +84,8 @@ module Pathway
         end
       end
 
-      def self.apply(operation, model: nil, **args)
-        operation.model(model, args) if model
+      def self.apply(operation, model: nil, **kwargs)
+        operation.model(model, **kwargs) if model
       end
     end
   end
