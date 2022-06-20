@@ -10,7 +10,7 @@ module Pathway
 
         context :with
 
-        def call(_input)
+        def call(_)
           with
         end
       end

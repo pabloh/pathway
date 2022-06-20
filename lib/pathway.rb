@@ -45,6 +45,14 @@ module Pathway
       @details = details || {}
     end
 
+    def deconstruct
+      [type, message, details]
+    end
+
+    def deconstruct_keys(_)
+      { type: type, message: message, details: details }
+    end
+
     private
 
     def default_message_for(type)
