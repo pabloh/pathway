@@ -22,6 +22,10 @@ module Pathway
         follow = self.then(bl, &block)
         follow.failure? ? follow : self
       end
+
+      private
+
+      alias :value_for_deconstruct :value
     end
 
     class Failure < Result
@@ -39,6 +43,22 @@ module Pathway
 
       def tee(_=nil)
         self
+      end
+
+      private
+
+      alias :value_for_deconstruct :error
+    end
+
+    def deconstruct
+      [value_for_deconstruct]
+    end
+
+    def deconstruct_keys(keys)
+      if value_for_deconstruct.respond_to?(:deconstruct_keys)
+        value_for_deconstruct.deconstruct_keys(keys)
+      else
+        {}
       end
     end
 
