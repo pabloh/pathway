@@ -14,14 +14,14 @@ module Pathway
       end
 
       let(:input)   { {} }
-      let(:context) { { with: passed_result} }
+      let(:context) { { with: passed_result } }
 
       context "when calling operation using 'case'" do
         context "providing a single variable name as pattern" do
           let(:result) do
             case RespOperation.call(context, input)
-              in Success(value) then "Returning: " + value
-              in Failure(error) then error.message
+            in Success(value) then "Returning: " + value
+            in Failure(error) then error.message
             end
           end
 
@@ -50,8 +50,8 @@ module Pathway
             it "raises a non matching error" do
               expect {
                 case RespOperation.call(context, input)
-                  in Success(value:) then value
-                  in Failure(error) then value
+                in Success(value:) then value
+                in Failure(error) then error
                 end
               }.to raise_error(NoMatchingPatternError)
             end
@@ -59,10 +59,10 @@ module Pathway
 
           let(:result) do
             case RespOperation.call(context, input)
-              in Success(value) then "Returning: " + value
-              in Failure(type: :forbidden) then "Forbidden"
-              in Failure(type: :validation, details:) then "Invalid: " + details.join(", ")
-              in Failure(details:) then "Other: " + details.join(" ")
+            in Success(value) then "Returning: " + value
+            in Failure(type: :forbidden) then "Forbidden"
+            in Failure(type: :validation, details:) then "Invalid: " + details.join(", ")
+            in Failure(details:) then "Other: " + details.join(" ")
             end
           end
 
@@ -108,11 +108,11 @@ module Pathway
         context "providing Array based patterns," do
           let(:result) do
             case RespOperation.call(context, input)
-              in Success(value) then "Returning: " + value
-              in Failure([:forbidden,]) then "Forbidden"
-              in Failure([:validation, _, details]) then "Invalid: " + details.join(", ")
-              in Failure(type: :validation, details:) then "Invalid: " + details.join(", ")
-              in Failure([*, details]) then "Other: " + details.join(" ")
+            in Success(value) then "Returning: " + value
+            in Failure([:forbidden,]) then "Forbidden"
+            in Failure([:validation, _, details]) then "Invalid: " + details.join(", ")
+            in Failure(type: :validation, details:) then "Invalid: " + details.join(", ")
+            in Failure([*, details]) then "Other: " + details.join(" ")
             end
           end
 
