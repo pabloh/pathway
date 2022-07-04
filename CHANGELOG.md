@@ -1,6 +1,11 @@
+## [0.12.1] - 2022-07-04
+### Added
+- Add support for pattern matching on `Result`, `State` and `Error` instances
+
 ## [0.12.0] - 2022-05-31
 ### Changed
 - Improve compatibility with Ruby 3.0
+### Added
 - Add plugin `:auto_deconstruct_state` to help migrating old apps to Ruby 3.0
 
 ## [0.11.3] - 2020-07-22
@@ -16,7 +21,7 @@
 - Improve custom `rspec` matchers for testing field presence on schemas
 
 ## [0.11.0] - 2020-01-02
-### Changed
+### Added
 - Add support for `dry-validation` 1.0 and above
 
 ## [0.10.0] - 2019-10-06
