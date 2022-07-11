@@ -124,7 +124,7 @@ module Pathway
         end
 
         def error(type, message: nil, details: nil)
-          failure Error.new(type: type, message: message, details: details)
+          failure(Error.new(type: type, message: message, details: details))
         end
 
         def wrap_if_present(value, type: :not_found, message: nil, details: {})

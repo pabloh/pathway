@@ -50,6 +50,11 @@ module Pathway
       alias :value_for_deconstruct :error
     end
 
+    module Mixin
+      Success = Result::Success
+      Failure = Result::Failure
+    end
+
     def deconstruct
       [value_for_deconstruct]
     end

@@ -1,6 +1,7 @@
-## [0.12.1] - 2022-07-04
+## [0.12.1] - 2022-07-11
 ### Added
 - Add support for pattern matching on `Result`, `State` and `Error` instances
+- Add `Pathway::Result::Mixin` to allow easy constant lookup for `Result::Success` and `Result::Failure`
 
 ## [0.12.0] - 2022-05-31
 ### Changed
