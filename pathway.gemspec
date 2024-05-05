@@ -34,7 +34,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "ruby2_keywords"
 
   spec.add_development_dependency "dry-validation", ">= 0.11"
-  spec.add_development_dependency "bundler", "~> 2.4.10"
+  spec.add_development_dependency "bundler", ">= 2.4.10"
   spec.add_development_dependency "sequel", "~> 5.0"
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "rspec", "~> 3.11"
