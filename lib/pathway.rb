@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'ruby2_keywords'
 require 'forwardable'
 require 'dry/inflector'
 require 'contextualizer'
@@ -11,7 +10,7 @@ module Pathway
   Inflector = Dry::Inflector.new
   class Operation
     class << self
-      ruby2_keywords def plugin(name, *args)
+      def plugin(name,...)
         require "pathway/plugins/#{Inflector.underscore(name)}" if name.is_a?(Symbol)
 
         plugin = name.is_a?(Module) ? name : Plugins.const_get(Inflector.camelize(name))
@@ -20,7 +19,7 @@ module Pathway
         self.include plugin::InstanceMethods if plugin.const_defined? :InstanceMethods
         self::DSL.include plugin::DSLMethods if plugin.const_defined? :DSLMethods
 
-        plugin.apply(self, *args) if plugin.respond_to?(:apply)
+        plugin.apply(self, ...) if plugin.respond_to?(:apply)
       end
 
       def inherited(subclass)
@@ -121,8 +120,8 @@ module Pathway
           end
         end
 
-        ruby2_keywords def call(ctx, *params)
-          new(ctx).call(*params)
+        def call(ctx,...)
+          new(ctx).call(...)
         end
 
         def inherited(subclass)
@@ -168,18 +167,18 @@ module Pathway
         end
 
         # Execute step and preserve the former state
-        ruby2_keywords def step(callable, *args)
+        def step(callable,...)
           bl = _callable(callable)
 
-          @result = @result.tee { |state| bl.call(state, *args) }
+          @result = @result.tee { |state| bl.call(state,...) }
         end
 
         # Execute step and modify the former state setting the key
-        def set(callable, *args, to: @operation.result_key)
+        def set(callable, *args, to: @operation.result_key, **kwargs, &bl)
           bl = _callable(callable)
 
           @result = @result.then do |state|
-            wrap(bl.call(state, *args))
+            wrap(bl.call(state, *args, **kwargs, &bl))
               .then { |value| state.update(to => value) }
           end
         end
@@ -221,9 +220,9 @@ module Pathway
         def _callable(callable)
           case callable
           when Proc
-            -> *args { @operation.instance_exec(*args, &callable) }.ruby2_keywords
+            -> *args, **kwargs { @operation.instance_exec(*args, **kwargs, &callable) }
           when Symbol
-            -> *args { @operation.send(callable, *args) }.ruby2_keywords
+            -> *args, **kwargs { @operation.send(callable, *args, **kwargs) }
           else
             callable
           end
