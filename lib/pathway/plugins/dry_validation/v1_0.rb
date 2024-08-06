@@ -22,8 +22,8 @@ module Pathway
             end
           end
 
-          ruby2_keywords def params(*args, &block)
-            contract { params(*args, &block) }
+          def params(*args, **kwargs, &block)
+            contract { params(*args, **kwargs, &block) }
           end
 
           def contract_class= klass
