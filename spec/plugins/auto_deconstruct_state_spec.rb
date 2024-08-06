@@ -36,8 +36,10 @@ module Pathway
           UserModel.new(name, email)
         end
 
-        def notify(value:, **)
-          @notifier.call(value)
+        def notify(s)
+          s.u do |value:|
+            @notifier.call(value)
+          end
         end
       end
 

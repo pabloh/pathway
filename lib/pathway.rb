@@ -83,7 +83,23 @@ module Pathway
       @hash
     end
 
-    alias :to_h :to_hash
+    def unwrap(&bl)
+      raise 'a block must be provided' if !block_given?
+      params = bl.parameters
+      unless params.all? { |(type,_)| [:block, :key, :keyreq, :keyrest].member?(type) }
+        raise 'only keyword arguments are supported for unwraping'
+      end
+
+      if params.any? {|(type,_)| type == :keyrest }
+        bl.call(**to_hash)
+      else
+        keys = params.select {|(type,_)| type == :key || type == :keyreq }.map(&:last)
+        bl.call(**to_hash.slice(*keys))
+      end
+    end
+
+    alias_method :to_h, :to_hash
+    alias_method :u, :unwrap
   end
 
   module Plugins

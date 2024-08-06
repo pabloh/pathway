@@ -8,6 +8,7 @@ module Pathway
 
         def _callable(callable)
           if callable.is_a?(Symbol) && @operation.respond_to?(callable, true) &&
+            @operation.method(callable).arity != 0 &&
             @operation.method(callable).parameters.all? { _1 in [:key|:keyreq|:keyrest|:block,*] }
 
             -> state { @operation.send(callable, **state) }

@@ -1,3 +1,7 @@
+## [0.12.2] - 2024-08-06
+### Added
+- Add `Pathway::State#unwrap` and `Pathway::State#u` to access internal state
+
 ## [0.12.1] - 2024-06-23
 ### Added
 - Add support for pattern matching on `Result`, `State` and `Error` instances
