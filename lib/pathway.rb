@@ -19,7 +19,7 @@ module Pathway
         self.include plugin::InstanceMethods if plugin.const_defined? :InstanceMethods
         self::DSL.include plugin::DSLMethods if plugin.const_defined? :DSLMethods
 
-        plugin.apply(self, ...) if plugin.respond_to?(:apply)
+        plugin.apply(self,...) if plugin.respond_to?(:apply)
       end
 
       def inherited(subclass)
@@ -44,13 +44,8 @@ module Pathway
       @details = details || {}
     end
 
-    def deconstruct
-      [type, message, details]
-    end
-
-    def deconstruct_keys(_)
-      { type: type, message: message, details: details }
-    end
+    def deconstruct = [type, message, details]
+    def deconstruct_keys(_) = { type:, message:, details: }
 
     private
 
@@ -61,35 +56,29 @@ module Pathway
 
   class State
     extend Forwardable
+    delegate %i([] []= fetch store include? values_at deconstruct_keys) => :@hash
 
     def initialize(operation, values = {})
       @hash = operation.context.merge(values)
       @result_key = operation.result_key
     end
 
-    delegate %i([] []= fetch store include? values_at deconstruct_keys) => :@hash
-
     def update(kargs)
       @hash.update(kargs)
       self
     end
 
-    def result
-      @hash[@result_key]
-    end
-
-    def to_hash
-      @hash
-    end
+    def result = @hash[@result_key]
+    def to_hash = @hash
 
     def use(&bl)
       raise ArgumentError, 'a block must be provided' if !block_given?
-      if bl.parameters.any? {|(type,_)| type == :keyrest || type == :rest }
+      if bl.parameters in [*, [:rest|:keyrest,], *]
         raise ArgumentError, 'rest arguments are not supported'
       end
 
-      keys = bl.parameters.select {|(type,_)| type == :key || type == :keyreq }.map(&:last)
-      names = bl.parameters.select {|(type,_)| type == :req || type == :opt }.map(&:last)
+      keys = bl.parameters.select { _1 in :key|:keyreq, }.map(&:last)
+      names = bl.parameters.select { _1 in :req|:opt, }.map(&:last)
 
       if keys.any? && names.any?
         raise ArgumentError, 'cannot mix positional and keyword arguments'
@@ -109,20 +98,19 @@ module Pathway
     module Base
       module ClassMethods
         attr_accessor :result_key
-        alias :result_at :result_key=
+
+        alias_method :result_at, :result_key=
 
         def process(&bl)
           dsl = self::DSL
           define_method(:call) do |input|
-            dsl.new(State.new(self, input: input), self)
+            dsl.new(State.new(self, input:), self)
                .run(&bl)
                .then(&:result)
           end
         end
 
-        def call(ctx,...)
-          new(ctx).call(...)
-        end
+        def call(ctx,...) = new(ctx).call(...)
 
         def inherited(subclass)
           super
@@ -136,18 +124,16 @@ module Pathway
         delegate :result_key => 'self.class'
         delegate %i[result success failure] => Result
 
-        alias :wrap :result
+        alias_method :wrap, :result
 
-        def call(*)
-          fail 'must implement at subclass'
-        end
+        def call(*) = raise 'must implement at subclass'
 
         def error(type, message: nil, details: nil)
-          failure(Error.new(type: type, message: message, details: details))
+          failure(Error.new(type:, message:, details:))
         end
 
         def wrap_if_present(value, type: :not_found, message: nil, details: {})
-          value.nil? ? error(type, message: message, details: details) : success(value)
+          value.nil? ? error(type, message:, details:) : success(value)
         end
       end
 
@@ -169,7 +155,6 @@ module Pathway
         # Execute step and preserve the former state
         def step(callable,...)
           bl = _callable(callable)
-
           @result = @result.tee { |state| bl.call(state,...) }
         end
 
@@ -189,23 +174,22 @@ module Pathway
           @result = @result.then { |state| bl.call(state,...) }
         end
 
-        def around(wrapper, &steps)
+        def around(execution_strategy, &dsl_block)
           @result.then do |state|
-            seq = -> (dsl = self) { @result = dsl.run(&steps) }
-            _callable(wrapper).call(seq, state)
+            dsl_runner = ->(dsl = self) { @result = dsl.run(&dsl_block) }
+
+            _callable(execution_strategy).call(dsl_runner, state)
           end
         end
 
-        def if_true(cond, &steps)
+        def if_true(cond, &dsl_block)
           cond = _callable(cond)
-          around(-> seq, state {
-            seq.call if cond.call(state)
-          }, &steps)
+          around(->(dsl_runner, state) { dsl_runner.call if cond.call(state) }, &dsl_block)
         end
 
-        def if_false(cond, &steps)
+        def if_false(cond, &dsl_block)
           cond = _callable(cond)
-          if_true(-> state { !cond.call(state) }, &steps)
+          if_true(->(state) { !cond.call(state) }, &dsl_block)
         end
 
         alias_method :sequence, :around
@@ -213,16 +197,14 @@ module Pathway
 
         private
 
-        def wrap(obj)
-          Result.result(obj)
-        end
+        def wrap(obj) = Result.result(obj)
 
         def _callable(callable)
           case callable
           when Proc
-            -> *args, **kwargs { @operation.instance_exec(*args, **kwargs, &callable) }
+            ->(*args, **kwargs) { @operation.instance_exec(*args, **kwargs, &callable) }
           when Symbol
-            -> *args, **kwargs { @operation.send(callable, *args, **kwargs) }
+            ->(*args, **kwargs) { @operation.send(callable, *args, **kwargs) }
           else
             callable
           end

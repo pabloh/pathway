@@ -20,6 +20,7 @@ end
 require 'pathway'
 require 'sequel'
 require 'pry'
+require 'pry-byebug'
 
 # Load testing support files
 Dir[__dir__ + '/support/**/*.rb'].each { |support| require support }

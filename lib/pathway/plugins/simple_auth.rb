@@ -26,9 +26,7 @@ module Pathway
           authorized?(*objs) ? wrap(objs) : error(:forbidden)
         end
 
-        def authorized?(*)
-          true
-        end
+        def authorized?(*) = true
       end
     end
   end

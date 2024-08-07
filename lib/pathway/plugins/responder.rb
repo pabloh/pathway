@@ -21,9 +21,7 @@ module Pathway
           instance_eval(&bl)
         end
 
-        def success(&bl)
-          @ok = bl
-        end
+        def success(&bl)= @ok = bl
 
         def failure(type = nil, &bl)
           if type.nil?
