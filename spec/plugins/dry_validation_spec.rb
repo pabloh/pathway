@@ -1,21 +1,18 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'dry/validation/version'
-
-return unless Dry::Validation::VERSION =~ /^0\.1[23]/
 
 module Pathway
   module Plugins
-    describe 'DryValidation::V0_12' do
+    describe 'DryValidation' do
       class SimpleOperation < Operation
         plugin :dry_validation
 
         context :user, :repository
 
-        form do
-          required(:name).filled(:str?)
-          optional(:email).maybe(:str?)
+        params do
+          required(:name).filled(:string)
+          optional(:email).maybe(:string)
         end
 
         process do
@@ -26,19 +23,22 @@ module Pathway
 
         private
 
-        def fetch_profile(params:,**)
-          wrap_if_present(repository.fetch(params))
+        def fetch_profile(state)
+          wrap_if_present(repository.fetch(state[:params]))
         end
 
-        def create_model(params:, profile:,**)
+        def create_model(state)
+          params, profile = state.values_at(:params, :profile)
           SimpleModel.new(*params.values, user.role, profile)
         end
       end
 
       SimpleModel = Struct.new(:name, :email, :role, :profile)
 
-      SimpleForm = Dry::Validation.Params do
-        required(:age).filled(:int?)
+      class SimpleContract < Dry::Validation::Contract
+        params do
+          required(:age).filled(:integer)
+        end
       end
 
       class OperationWithOpt < Operation
@@ -46,10 +46,16 @@ module Pathway
 
         context :quz
 
-        form do
-          configure { option :foo }
+        contract do
+          option :foo
 
-          required(:qux).filled(eql?: foo)
+          params do
+            required(:qux).filled(:string)
+          end
+
+          rule(:qux) do
+            key.failure('not equal to :foo') unless value == foo
+          end
         end
 
         process do
@@ -58,14 +64,20 @@ module Pathway
       end
 
       class OperationWithAutoWire < Operation
-        plugin :dry_validation, auto_wire_options: true
+        plugin :dry_validation, auto_wire: true
 
         context :baz
 
-        form do
-          configure { option :baz }
+        contract do
+          option :baz
 
-          required(:qux).filled(eql?: baz)
+          params do
+            required(:qux).filled(:string)
+          end
+
+          rule(:qux) do
+            key.failure('not equal to :foo') unless value == baz
+          end
         end
 
         process do
@@ -73,80 +85,71 @@ module Pathway
         end
       end
 
-      describe ".form_class" do
+      describe ".contract_class" do
         subject(:operation_class) { Class.new(Operation) { plugin :dry_validation } }
 
-        context "when no form's been setup" do
-          it "returns a default empty form" do
-            expect(operation_class.form_class).to eq(Dry::Validation::Params)
+        context "when no contract's been setup" do
+          it "returns a default empty contract" do
+            expect(operation_class.contract_class).to eq(Dry::Validation::Contract)
           end
         end
 
-        context "when a form's been set" do
-          it "returns the form" do
-            operation_class.form_class = SimpleForm
-            expect(operation_class.form_class).to eq(SimpleForm)
+        context "when a contract's been set" do
+          it "returns the contract" do
+            operation_class.contract_class = SimpleContract
+            expect(operation_class.contract_class).to eq(SimpleContract)
           end
         end
       end
 
-      describe ".build_form" do
-        let(:form) { OperationWithOpt.build_form(foo: "XXXXX") }
+      describe ".build_contract" do
+        let(:contract) { OperationWithOpt.build_contract(foo: "XXXXX") }
 
-        it "uses passed the option from the context to the form" do
-          expect(form.call(qux: "XXXXX")).to be_a_success
+        it "uses passed the option from the context to the contract" do
+          expect(contract.call(qux: "XXXXX")).to be_a_success
         end
       end
 
-      describe ".form_options" do
-        it "returns the option names defined for the form" do
-          expect(SimpleOperation.form_options).to eq([])
-          expect(OperationWithOpt.form_options).to eq([:foo])
+      describe ".contract_options" do
+        it "returns the option names defined for the contract" do
+          expect(SimpleOperation.contract_options).to eq([])
+          expect(OperationWithOpt.contract_options).to eq([:foo])
         end
       end
 
-      describe ".form" do
-        context "when called with a form" do
+      describe ".contract" do
+        context "when called with a contract" do
           subject(:operation_class) do
             Class.new(Operation) do
               plugin :dry_validation
-              form SimpleForm
+              contract SimpleContract
             end
           end
 
-          it "uses the passed form's class" do
-            expect(operation_class.form_class).to eq(SimpleForm.class)
+          it "uses the passed contract's class" do
+            expect(operation_class.contract_class).to eq(SimpleContract)
           end
 
           context "and a block" do
             subject(:operation_class) do
               Class.new(Operation) do
                 plugin :dry_validation
-                form(SimpleForm) { required(:gender).filled }
+                contract(SimpleContract) do
+                  params do
+                    required(:gender).filled(:string)
+                  end
+                end
               end
             end
 
-            it "extend from the form's class" do
-              expect(operation_class.form_class).to be < SimpleForm.class
+            it "extend from the contract's class" do
+              expect(operation_class.contract_class).to be < SimpleContract
             end
 
-            it "extends the form rules with the block's rules" do
-              expect(operation_class.form_class.rules.map(&:name))
+            it "extends the contract rules with the block's rules" do
+              expect(operation_class.contract_class.schema.rules.keys)
                 .to include(:age, :gender)
             end
-          end
-        end
-
-        context "when called with a form class" do
-          subject(:operation_class) do
-            Class.new(Operation) do
-              plugin :dry_validation
-              form SimpleForm.class
-            end
-          end
-
-          it "uses the passed class as is" do
-            expect(operation_class.form_class).to eq(SimpleForm.class)
           end
         end
 
@@ -154,16 +157,20 @@ module Pathway
           subject(:operation_class) do
             Class.new(Operation) do
               plugin :dry_validation
-              form { required(:gender).filled }
+              contract do
+                params do
+                  required(:gender).filled(:string)
+                end
+              end
             end
           end
 
-          it "extends from the default form class" do
-            expect(operation_class.form_class).to be < Dry::Validations::Params
+          it "extends from the default contract class" do
+            expect(operation_class.contract_class).to be < Dry::Validation::Contract
           end
 
           it "uses the rules defined at the passed block" do
-            expect(operation_class.form_class.rules.map(&:name))
+            expect(operation_class.contract_class.schema.rules.keys)
               .to include(:gender)
           end
         end
@@ -202,7 +209,7 @@ module Pathway
           end
         end
 
-        context "when form requires options for validation" do
+        context "when contract requires options for validation" do
           subject(:operation) { OperationWithOpt.new(quz: 'XXXXX') }
 
           it "sets then passing a hash through the :with argument" do

@@ -5,21 +5,82 @@ require 'dry/validation'
 module Pathway
   module Plugins
     module DryValidation
-      def self.apply(operation, **kwargs)
+      module ClassMethods
+        attr_reader :contract_class, :contract_options
+        attr_accessor :auto_wire
+
+        alias_method :auto_wire_options, :auto_wire
+        alias_method :auto_wire_options=, :auto_wire=
+
+        def contract(base = nil, &block)
+          if block_given?
+            base ||= _base_contract
+            self.contract_class = Class.new(base, &block)
+          elsif base
+            self.contract_class = base
+          else
+            raise ArgumentError, 'Either a contract class or a block must be provided'
+          end
+        end
+
+        def params(*args, **kwargs, &block)
+          contract { params(*args, **kwargs, &block) }
+        end
+
+        def contract_class= klass
+          @contract_class   = klass
+          @contract_options = (klass.dry_initializer.options - Dry::Validation::Contract.dry_initializer.options).map(&:target)
+          @builded_contract = @contract_options.empty? && klass.schema ? klass.new : nil
+        end
+
+        def build_contract(**opts)
+          @builded_contract || contract_class.new(**opts)
+        end
+
+        def inherited(subclass)
+          super
+          subclass.auto_wire      = auto_wire
+          subclass.contract_class = contract_class
+        end
+
+        private
+
+        def _base_contract
+          superclass.respond_to?(:contract_class) ? superclass.contract_class : Dry::Validation::Contract
+        end
+      end
+
+      module InstanceMethods
+        extend Forwardable
+
+        delegate %i[build_contract contract_options auto_wire_options auto_wire] => 'self.class'
+        alias_method :contract, :build_contract
+
+        def validate(state, with: nil)
+          if auto_wire && contract_options.any?
+            with ||= contract_options.zip(contract_options).to_h
+          end
+          opts = Hash(with).map { |to, from| [to, state[from]] }.to_h
+          validate_with(state[:input], **opts)
+            .then { |params| state.update(params:) }
+        end
+
+        def validate_with(input, **opts)
+          result = contract(**opts).call(input)
+
+          result.success? ? wrap(result.values.to_h) : error(:validation, details: result.errors.to_h)
+        end
+      end
+
+      def self.apply(operation, auto_wire_options: (auto_wire_options_was_not_used=true; false), auto_wire: auto_wire_options)
         #:nocov:
-        if Gem.loaded_specs['dry-validation'].version < Gem::Version.new('0.11')
-          fail 'unsupported dry-validation gem version'
-        elsif Gem.loaded_specs['dry-validation'].version < Gem::Version.new('0.12')
-          require 'pathway/plugins/dry_validation/v0_11'
-          operation.plugin(Plugins::DryValidation::V0_11, **kwargs)
-        elsif Gem.loaded_specs['dry-validation'].version < Gem::Version.new('1.0')
-          require 'pathway/plugins/dry_validation/v0_12'
-          operation.plugin(Plugins::DryValidation::V0_12, **kwargs)
-        else
-          require 'pathway/plugins/dry_validation/v1_0'
-          operation.plugin(Plugins::DryValidation::V1_0, **kwargs)
+        unless auto_wire_options_was_not_used
+          warn "[DEPRECATION] `auto_wire_options` is deprecated. Please use `auto_wire` instead"
         end
         #:nocov:
+
+        operation.auto_wire      = auto_wire
+        operation.contract_class = Dry::Validation::Contract
       end
     end
   end
