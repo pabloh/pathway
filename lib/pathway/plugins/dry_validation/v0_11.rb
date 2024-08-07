@@ -6,7 +6,10 @@ module Pathway
       module V0_11
         module ClassMethods
           attr_reader :form_class, :form_options
-          attr_accessor :auto_wire_options
+          attr_accessor :auto_wire
+
+          alias_method :auto_wire_options, :auto_wire
+          alias_method :auto_wire_options=, :auto_wire=
 
           def form(base = nil, **opts, &block)
             if block_given?
@@ -32,7 +35,7 @@ module Pathway
           def inherited(subclass)
             super
             subclass.form_class = form_class
-            subclass.auto_wire_options = auto_wire_options
+            subclass.auto_wire  = auto_wire
           end
 
           private
@@ -58,10 +61,11 @@ module Pathway
           extend Forwardable
 
           delegate %i[build_form form_options auto_wire_options] => 'self.class'
-          alias :form :build_form
+          delegate %i[build_form form_options auto_wire_options auto_wire] => 'self.class'
+          alias_method :form, :build_form
 
           def validate(state, with: nil)
-            if auto_wire_options && form_options.any?
+            if auto_wire && form_options.any?
               with ||= form_options.zip(form_options).to_h
             end
             opts = Hash(with).map { |opt, key| [opt, state[key]] }.to_h
@@ -76,9 +80,15 @@ module Pathway
           end
         end
 
-        def self.apply(operation, auto_wire_options: false)
+        def self.apply(operation, auto_wire_options: (auto_wire_options_was_not_used=true; false), auto_wire: auto_wire_options)
+          #:nocov:
+          unless auto_wire_options_was_not_used
+            warn "[DEPRECATION] `auto_wire_options` is deprecated. Please use `auto_wire` instead"
+          end
+          #:nocov:
+
+          operation.auto_wire  = auto_wire
           operation.form_class = Dry::Validation::Schema::Form
-          operation.auto_wire_options = auto_wire_options
         end
       end
     end
