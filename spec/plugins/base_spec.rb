@@ -14,7 +14,7 @@ module Pathway
           step :custom_validate
           set  :get_value
           set  :get_aux_value, to: :aux_value
-          around(-> seq, st { seq.call if cond.call(st) }) do
+          around(-> run, st { run.call if cond.call(st) }) do
             set ->_ { 99 }, to: :aux_value
             set ->_ { :UPDATED }
           end
@@ -42,8 +42,8 @@ module Pathway
           state[result_key]
         end
 
-        def if_zero(seq, state)
-          seq.call if state[:result_value] == 0
+        def if_zero(run, state)
+          run.call if state[:result_value] == 0
         end
 
         def negative?(state)
