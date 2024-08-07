@@ -55,15 +55,15 @@ module Pathway
 
         it 'fails if at least one positional param is defined', :aggregate_failures do
           expect { state.unwrap {|pos, input:| } }
-            .to raise_error('only keyword arguments are supported for unwraping')
+            .to raise_error('only keyword arguments are supported')
           expect { state.unwrap {|input| } }
-            .to raise_error('only keyword arguments are supported for unwraping')
+            .to raise_error('only keyword arguments are supported')
         end
 
         context 'and it takes a block argument' do
           it 'fails if it has positional params' do
             expect { state.unwrap {|input, &bl| } }
-              .to raise_error('only keyword arguments are supported for unwraping')
+              .to raise_error('only keyword arguments are supported')
           end
 
           it 'does not fails if only keyword params', :aggregate_failures do
