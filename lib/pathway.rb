@@ -83,14 +83,14 @@ module Pathway
       @hash
     end
 
-    def unwrap(&bl)
-      raise 'a block must be provided' if !block_given?
-      params = bl.parameters
-      unless params.all? { |(type,_)| [:block, :key, :keyreq, :keyrest].member?(type) }
-        raise 'only keyword arguments are supported for unwraping'
-      end
+    def use(&bl)
+      raise ArgumentError, 'a block must be provided' if !block_given?
 
-      if params.any? {|(type,_)| type == :keyrest }
+      params = bl.parameters
+
+      if !params.all? { |(type,_)| [:block, :key, :keyreq, :keyrest].member?(type) }
+        raise ArgumentError, 'only keyword arguments are supported'
+      elsif params.any? {|(type,_)| type == :keyrest }
         bl.call(**to_hash)
       else
         keys = params.select {|(type,_)| type == :key || type == :keyreq }.map(&:last)
@@ -99,7 +99,8 @@ module Pathway
     end
 
     alias_method :to_h, :to_hash
-    alias_method :u, :unwrap
+    alias_method :u, :use
+    alias_method :unwrap, :use
   end
 
   module Plugins
