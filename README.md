@@ -407,12 +407,12 @@ end
 
 If you are familiar with `dry-validation` you probably know it provides a way to [inject options](https://dry-rb.org/gems/dry-validation/1.4/external-dependencies/) before calling the contract.
 
-In those scenarios, you must either set the `auto_wire_options: true` plugin argument or specify how to map options from the execution state to the contract when calling `step :validate`.
+In those scenarios, you must either set the `auto_wire: true` plugin argument or specify how to map options from the execution state to the contract when calling `step :validate`.
 Lets see and example for the first case:
 
 ```ruby
 class CreateNugget < Pathway::Operation
-  plugin :dry_validation, auto_wire_options: true
+  plugin :dry_validation, auto_wire: true
 
   context :user_name
 
@@ -438,7 +438,7 @@ class CreateNugget < Pathway::Operation
 end
 ```
 
-Here the defined contract needs a `:user_name` option, so we tell the operation to grab the attribute with the same name from the state by activating `:auto_wire_options`, afterwards, when the validation runs, the contract will already have the user name available.
+Here the defined contract needs a `:user_name` option, so we tell the operation to grab the attribute with the same name from the state by activating `:auto_wire`, afterwards, when the validation runs, the contract will already have the user name available.
 
 Mind you, this option is `false` by default, so be sure to set it to `true` at `Pathway::Operation` if you'd rather have it enabled for all your operations.
 

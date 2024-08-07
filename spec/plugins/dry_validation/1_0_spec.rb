@@ -67,7 +67,7 @@ module Pathway
       end
 
       class OperationWithAutoWire < Operation
-        plugin :dry_validation, auto_wire_options: true
+        plugin :dry_validation, auto_wire: true
 
         context :baz
 
