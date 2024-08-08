@@ -184,9 +184,9 @@ module Pathway
         end
 
         # Execute step and replace the current state completely
-        def map(callable)
+        def map(callable,...)
           bl = _callable(callable)
-          @result = @result.then(bl)
+          @result = @result.then { |state| bl.call(state,...) }
         end
 
         def around(wrapper, &steps)

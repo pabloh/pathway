@@ -12,6 +12,7 @@ module Pathway
 
         process do
           step :custom_validate
+          map  :add_misc
           set  :get_value
           set  :get_aux_value, to: :aux_value
           around(-> seq, st { seq.call if cond.call(st) }) do
@@ -32,6 +33,10 @@ module Pathway
 
         def custom_validate(state)
           state[:params] = @validator.call(state)
+        end
+
+        def add_misc(state)
+          State.new(self, state.to_h.merge(misc: -1))
         end
 
         def get_value(state)
@@ -109,6 +114,26 @@ module Pathway
 
           expect(result).to be_a_success
           expect(result.value).to eq(:SOME_RETURN_VALUE)
+        end
+      end
+
+      describe "#map" do
+        it "defines a step that replaces the current state" do
+          old_state = nil
+
+          expect(validator).to receive(:call) do |state|
+            expect(state.to_h).to_not include(:misc)
+
+            old_state = state
+            state[:input]
+          end
+
+          expect(notifier).to receive(:call) do |state|
+            expect(state.to_h).to include(misc: -1)
+            expect(state).to_not be_equal(old_state)
+          end
+
+          operation.call(input)
         end
       end
 
