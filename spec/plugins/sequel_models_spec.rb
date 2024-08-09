@@ -58,8 +58,6 @@ module Pathway
         end
       end
 
-      class SubOperation < MyOperation; end
-
       describe 'DSL' do
         let(:result) { operation.call(params) }
         let(:params) { { email: 'asd@fgh.net' } }
@@ -274,13 +272,14 @@ module Pathway
         end
 
         context 'when the operation is inherited' do
-          it "sets 'result_key', 'search_field', 'model_class' and 'model_not_found' from the superclass" do
-            aggregate_failures do
-              expect(SubOperation.result_key).to eq(MyOperation.result_key)
-              expect(SubOperation.search_field).to eq(MyOperation.search_field)
-              expect(SubOperation.model_class).to eq(MyOperation.model_class)
-              expect(SubOperation.model_not_found).to eq(MyOperation.model_not_found)
-            end
+          let(:opr_class) { MyOperation }
+          subject(:opr_subclass) { Class.new(opr_class) }
+
+          it "sets 'result_key', 'search_field', 'model_class' and 'model_not_found' from the superclass", :aggregate_failures do
+            expect(opr_subclass.result_key).to eq(opr_class.result_key)
+            expect(opr_subclass.search_field).to eq(opr_class.search_field)
+            expect(opr_subclass.model_class).to eq(opr_class.model_class)
+            expect(opr_subclass.model_not_found).to eq(opr_class.model_not_found)
           end
         end
       end
