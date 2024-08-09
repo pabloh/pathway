@@ -6,33 +6,33 @@ module Pathway
   module Plugins
     module SequelModels
       module DSLMethods
-        def transaction(step_name = nil, &bl)
-          fail 'must provide a step or a block but not both' if !step_name.nil? == block_given?
+        def transaction(step_name = nil, &dsl_bl)
+          raise 'must provide a step or a block but not both' if !step_name.nil? == block_given?
 
           if step_name
             transaction { step step_name }
           else
-            around(-> steps, _ {
+            around(->(runner, _) {
               db.transaction(savepoint: true) do
-                raise Sequel::Rollback if steps.call.failure?
+                raise Sequel::Rollback if runner.call.failure?
               end
-            }, &bl)
+            }, &dsl_bl)
           end
         end
 
-        def after_commit(step_name = nil, &bl)
-          fail 'must provide a step or a block but not both' if !step_name.nil? == block_given?
+        def after_commit(step_name = nil, &dsl_bl)
+          raise 'must provide a step or a block but not both' if !step_name.nil? == block_given?
 
           if step_name
             after_commit { step step_name }
           else
-            around(-> steps, state {
-              dsl = self.class::DSL.new(State.new(self, state.to_h.dup), self)
+            around(->(runner, state) {
+              dsl_copy = self.class::DSL.new(State.new(self, state.to_h.dup), self)
 
               db.after_commit do
-                steps.call(dsl)
+                runner.call(dsl_copy)
               end
-            }, &bl)
+            }, &dsl_bl)
           end
         end
       end
@@ -41,10 +41,10 @@ module Pathway
         attr_accessor :model_class, :search_field, :model_not_found
 
         def model(model_class, search_by: model_class.primary_key, set_result_key: true, set_context_param: true, error_message: nil)
-          self.model_class      = model_class
-          self.search_field     = search_by
-          self.result_key       = Inflector.underscore(Inflector.demodulize(model_class.name)).to_sym if set_result_key
-          self.model_not_found  = error_message || "#{Inflector.humanize(Inflector.underscore(Inflector.demodulize(model_class.name)))} not found".freeze
+          self.model_class     = model_class
+          self.search_field    = search_by
+          self.result_key      = Inflector.underscore(Inflector.demodulize(model_class.name)).to_sym if set_result_key
+          self.model_not_found = error_message || "#{Inflector.humanize(Inflector.underscore(Inflector.demodulize(model_class.name)))} not found".freeze
 
           self.context(result_key => Contextualizer::OPTIONAL) if set_result_key && set_context_param
         end

@@ -1,13 +1,10 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'dry/validation/version'
-
-return unless Dry::Validation::VERSION =~ /^1\./
 
 module Pathway
   module Plugins
-    describe 'DryValidation::V1_0' do
+    describe 'DryValidation' do
       class SimpleOperation < Operation
         plugin :dry_validation
 
@@ -175,6 +172,25 @@ module Pathway
           it "uses the rules defined at the passed block" do
             expect(operation_class.contract_class.schema.rules.keys)
               .to include(:gender)
+          end
+        end
+
+        context "when called with no block nor contract" do
+          subject(:opr_class) { Class.new(Operation) { plugin :dry_validation } }
+
+          it 'raises an error' do
+            expect { opr_class.contract }
+              .to raise_error(ArgumentError, 'Either a contract class or a block must be provided')
+          end
+        end
+
+        context 'when the operation is inherited' do
+          let(:opr_class) { OperationWithAutoWire }
+          subject(:opr_subclass) { Class.new(OperationWithAutoWire) }
+
+          it "sets 'contract_class' and 'auto_wire' from the superclass", :aggregate_failures do
+            expect(opr_subclass.auto_wire).to eq(opr_class.auto_wire)
+            expect(opr_subclass.contract_class).to eq(opr_class.contract_class)
           end
         end
       end

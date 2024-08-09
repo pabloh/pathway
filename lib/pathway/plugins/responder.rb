@@ -4,8 +4,8 @@ module Pathway
   module Plugins
     module Responder
       module ClassMethods
-        ruby2_keywords def call(*args, &bl)
-          result = super(*args)
+        def call(*args, **kwargs, &bl)
+          result = super(*args, **kwargs)
           block_given? ? Responder.respond(result, &bl) : result
         end
       end
@@ -21,9 +21,7 @@ module Pathway
           instance_eval(&bl)
         end
 
-        def success(&bl)
-          @ok = bl
-        end
+        def success(&bl)= @ok = bl
 
         def failure(type = nil, &bl)
           if type.nil?

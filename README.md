@@ -474,10 +474,6 @@ end
 
 The `with:` parameter can always be specified for `step :validate`, and allows you to override the default mapping regardless if auto-wiring is active or not.
 
-##### Older versions of `dry-validation`
-
-Pathway supports the `dry-validation` gem down to version `0.11` (inclusive) in case you still have unmigrated code. When using versions below `1.0` the concept of contract is not present and instead of calling the `contract` method to set up your validation logic, you must use the `form` method. Everything else remains the same except, obviously, that you would have to use `dry-definition`'s [old API](https://dry-rb.org/gems/dry-validation/0.13/) which is a bit different from the current one.
-
 #### `SimpleAuth` plugin
 
 This very simple plugin adds a custom step called `:authorize`, that can be used to check for permissions and halt the operation with a `:forbidden` error when they aren't fulfilled.
