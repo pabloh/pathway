@@ -34,42 +34,57 @@ module Pathway
       end
 
       context 'when a block is provided' do
-        it 'passes specified values by the keyword params', :aggregate_failures do
+        it 'passes specified values using only keyword params', :aggregate_failures do
           expect(state.unwrap {|val:| val }).to eq('RESULT')
           expect(state.unwrap {|foo:| foo }).to eq(99)
           expect(state.unwrap {|val:, bar:| [val, bar] })
             .to eq(['RESULT', 131])
         end
 
-        it 'passes all values if **kwargs is part of the params', :aggregate_failures do
-          expect(state.unwrap {|**kargs| kargs })
-            .to eq(foo: 99, bar: 131, val: 'RESULT', input: 'some value')
-          expect(state.unwrap {|input:, **kargs| input }).to eq('some value')
-          expect(state.unwrap {|input:, **kargs| kargs })
-            .to eq(foo: 99, bar: 131, val: 'RESULT')
-        end
-
-        it 'passes no arguments if no keyword params are defined' do
+        it 'passes no arguments if no keyword or positional params are defined' do
           expect(state.unwrap { 77 }).to eq(77)
         end
 
-        it 'fails if at least one positional param is defined', :aggregate_failures do
-          expect { state.unwrap {|pos, input:| } }
-            .to raise_error('only keyword arguments are supported')
-          expect { state.unwrap {|input| } }
-            .to raise_error('only keyword arguments are supported')
+        it 'passes specified values using only positional params', :aggregate_failures do
+          expect(state.unwrap {|val| val }).to eq('RESULT')
+          expect(state.unwrap {|foo| foo }).to eq(99)
+          expect(state.unwrap {|val, bar| [val, bar] })
         end
 
-        context 'and it takes a block argument' do
-          it 'fails if it has positional params' do
-            expect { state.unwrap {|input, &bl| } }
-              .to raise_error('only keyword arguments are supported')
+        it 'fails if positional and keyword params are both defined', :aggregate_failures do
+          expect { state.unwrap {|pos, input:| } }
+            .to raise_error('cannot mix positional and keyword arguments')
+        end
+
+        it 'fails if using rest param', :aggregate_failures do
+          expect { state.unwrap {|*input| } }
+            .to raise_error('rest arguments are not supported')
+          expect { state.unwrap {|input, *args| args } }
+            .to raise_error('rest arguments are not supported')
+        end
+
+        it 'fails if using keyrest param', :aggregate_failures do
+          expect { state.unwrap {|**kargs| kargs } }
+            .to raise_error('rest arguments are not supported')
+          expect { state.unwrap {|input:, **kargs| kargs } }
+            .to raise_error('rest arguments are not supported')
+        end
+
+        context 'that takes a block argument' do
+          it 'fails if it has positional and keyword params' do
+            expect { state.unwrap {|input, val:, &bl| } }
+              .to raise_error('cannot mix positional and keyword arguments')
           end
 
-          it 'does not fails if only keyword params', :aggregate_failures do
+          it 'does not fails if only has keyword params', :aggregate_failures do
             expect(state.unwrap {|val:, &bl| val }).to eq('RESULT')
             expect(state.unwrap {|val:, &_| val }).to eq('RESULT')
             expect(state.unwrap {|&_| 77 }).to eq(77)
+          end
+
+          it 'does not fails if only has positional params', :aggregate_failures do
+            expect(state.unwrap {|val, &bl| val }).to eq('RESULT')
+            expect(state.unwrap {|val, &_| val }).to eq('RESULT')
           end
         end
 
