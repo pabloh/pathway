@@ -85,16 +85,19 @@ module Pathway
 
     def use(&bl)
       raise ArgumentError, 'a block must be provided' if !block_given?
+      if bl.parameters.any? {|(type,_)| type == :keyrest || type == :rest }
+        raise ArgumentError, 'rest arguments are not supported'
+      end
 
-      params = bl.parameters
+      keys = bl.parameters.select {|(type,_)| type == :key || type == :keyreq }.map(&:last)
+      names = bl.parameters.select {|(type,_)| type == :req || type == :opt }.map(&:last)
 
-      if !params.all? { |(type,_)| [:block, :key, :keyreq, :keyrest].member?(type) }
-        raise ArgumentError, 'only keyword arguments are supported'
-      elsif params.any? {|(type,_)| type == :keyrest }
-        bl.call(**to_hash)
-      else
-        keys = params.select {|(type,_)| type == :key || type == :keyreq }.map(&:last)
+      if keys.any? && names.any?
+        raise ArgumentError, 'cannot mix positional and keyword arguments'
+      elsif keys.any?
         bl.call(**to_hash.slice(*keys))
+      else
+        bl.call(*to_hash.values_at(*names))
       end
     end
 
