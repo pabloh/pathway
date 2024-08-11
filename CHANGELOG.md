@@ -1,8 +1,8 @@
 ## [0.12.3] - 2024-08-07
 ### Changed
 - Renamed config option `:auto_wire_options` to `:auto_wire` at `:dry_validation` plugin
-- Updated `Pathway::State#unwrap` to accept block with postional parameters
-- Updated `Pathway::State#unwrap` to raise an `ArgumentError` exception on invalid arguments
+- Updated `Pathway::State#use` to accept block with postional parameters
+- Updated `Pathway::State#use` to raise an `ArgumentError` exception on invalid arguments
 ### Added
 - Provide alias `Pathway::State#use` to `Pathway::State#unwrap`
 
