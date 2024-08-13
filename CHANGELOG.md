@@ -1,4 +1,4 @@
-## [0.12.3] - 2024-08-07
+## [0.12.3] - 2024-08-13
 ### Changed
 - Renamed config option `:auto_wire_options` to `:auto_wire` at `:dry_validation` plugin
 - Updated `Pathway::State#use` to accept block with postional parameters
