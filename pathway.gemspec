@@ -27,13 +27,12 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.required_ruby_version = ">= 2.4.0"
+  spec.required_ruby_version = ">= 3.1.0"
 
   spec.add_dependency "dry-inflector", ">= 0.1.0"
-  spec.add_dependency "contextualizer", "~> 0.0.4"
-  spec.add_dependency "ruby2_keywords"
+  spec.add_dependency "contextualizer", "~> 0.1.0"
 
-  spec.add_development_dependency "dry-validation", ">= 0.11"
+  spec.add_development_dependency "dry-validation", ">= 1.0"
   spec.add_development_dependency "bundler", ">= 2.4.10"
   spec.add_development_dependency "sequel", "~> 5.0"
   spec.add_development_dependency "rake", "~> 13.0"
@@ -41,6 +40,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "simplecov-lcov", '~> 0.8.0'
   spec.add_development_dependency "simplecov"
   spec.add_development_dependency "pry"
+  spec.add_development_dependency "byebug"
   spec.add_development_dependency "pry-byebug"
   spec.add_development_dependency "pry-doc"
   spec.add_development_dependency "pry-stack"

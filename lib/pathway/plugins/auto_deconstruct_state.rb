@@ -1,12 +1,22 @@
 # frozen_string_literal: true
 
-if RUBY_VERSION =~ /^3\./
-  require 'pathway/plugins/auto_deconstruct_state/ruby3'
-end
-
 module Pathway
   module Plugins
     module AutoDeconstructState
+      module DSLMethods
+        private
+
+        def _callable(callable)
+          if callable.is_a?(Symbol) && @operation.respond_to?(callable, true) &&
+            @operation.method(callable).arity != 0 &&
+            @operation.method(callable).parameters.all? { _1 in [:key|:keyreq|:keyrest|:block,*] }
+
+            -> state { @operation.send(callable, **state) }
+          else
+            super
+          end
+        end
+      end
     end
   end
 end

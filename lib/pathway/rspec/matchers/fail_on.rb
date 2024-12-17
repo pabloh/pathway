@@ -22,22 +22,22 @@ RSpec::Matchers.define :fail_on do |input|
     @type = type
   end
 
-  alias :with_type :type
-  alias :and_type :type
+  alias_method :with_type, :type
+  alias_method :and_type, :type
 
   chain :message do |message|
     @message = message
   end
 
-  alias :with_message :message
-  alias :and_message :message
+  alias_method :with_message, :message
+  alias_method :and_message, :message
 
   chain :details do |details|
     @details = details
   end
 
-  alias :with_details :details
-  alias :and_details :details
+  alias_method :with_details, :details
+  alias_method :and_details, :details
 
   description do
     'fail' + (@type ? " with :#@type error" : '')
