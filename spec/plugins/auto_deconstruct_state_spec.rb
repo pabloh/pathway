@@ -6,9 +6,7 @@ module Pathway
   module Plugins
     describe 'AutoDeconstructState' do
       class KwargsOperation < Operation
-        if RUBY_VERSION =~ /^3\./
-          plugin :auto_deconstruct_state
-        end
+        plugin :auto_deconstruct_state
 
         context :validator, :name_repo, :email_repo, :notifier
 

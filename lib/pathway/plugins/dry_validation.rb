@@ -12,10 +12,10 @@ module Pathway
         alias_method :auto_wire_options, :auto_wire
         alias_method :auto_wire_options=, :auto_wire=
 
-        def contract(base = nil, &block)
+        def contract(base = nil, &)
           if block_given?
             base ||= _base_contract
-            self.contract_class = Class.new(base, &block)
+            self.contract_class = Class.new(base, &)
           elsif base
             self.contract_class = base
           else
@@ -23,8 +23,8 @@ module Pathway
           end
         end
 
-        def params(*args, **kwargs, &block)
-          contract { params(*args, **kwargs, &block) }
+        def params(...)
+          contract { params(...) }
         end
 
         def contract_class= klass
@@ -33,8 +33,8 @@ module Pathway
           @builded_contract = @contract_options.empty? && klass.schema ? klass.new : nil
         end
 
-        def build_contract(**opts)
-          @builded_contract || contract_class.new(**opts)
+        def build_contract(**)
+          @builded_contract || contract_class.new(**)
         end
 
         def inherited(subclass)
@@ -65,8 +65,8 @@ module Pathway
             .then { |params| state.update(params:) }
         end
 
-        def validate_with(input, **opts)
-          result = contract(**opts).call(input)
+        def validate_with(input, **)
+          result = contract(**).call(input)
 
           result.success? ? wrap(result.values.to_h) : error(:validation, details: result.errors.to_h)
         end
