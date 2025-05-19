@@ -1,3 +1,8 @@
+## [1.0.0] - 2025-05-19
+### Changed
+- Removed support for `Ruby` versions older than 3.0
+- Removed support for `dry-validation` versions older than 1.0
+
 ## [0.12.3] - 2024-08-13
 ### Changed
 - Renamed config option `:auto_wire_options` to `:auto_wire` at `:dry_validation` plugin
