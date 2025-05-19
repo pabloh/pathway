@@ -11,8 +11,8 @@ module Pathway
       end
 
       class Responder
-        def self.respond(result, &bl)
-          r = new(result, &bl)
+        def self.respond(...)
+          r = new(...)
           r.respond
         end
 

@@ -13,8 +13,8 @@ module Pathway
         result(block_given? ? yield(value): bl.call(value))
       end
 
-      def tee(bl=nil, &block)
-        follow = self.then(bl, &block)
+      def tee(...)
+        follow = self.then(...)
         follow.failure? ? follow : self
       end
 
