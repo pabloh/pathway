@@ -72,8 +72,6 @@ module Pathway
       end
 
       describe "#call" do
-        let(:result)  { operation.call({}) }
-
         context "when the authorization blocks expects no params" do
           subject(:operation) { AuthOperation.new(context) }
           let(:context) { { user: double(role: role) } }
@@ -81,15 +79,14 @@ module Pathway
           context "and calling with proper authorization" do
             let(:role) { :admin }
             it "returns a successful result", :aggregate_failures do
-              expect(result).to be_a_success
+              expect(operation).to succeed_on({})
             end
           end
 
           context "and calling with without proper authorization" do
             let(:role) { :user }
             it "returns a failed result", :aggregate_failures do
-              expect(result).to be_a_failure
-              expect(result.error.type).to eq(:forbidden)
+              expect(operation).to fail_on({}).with_type(:forbidden)
             end
           end
         end
@@ -98,15 +95,14 @@ module Pathway
           context "and calling with proper authorization" do
             subject(:operation) { AuthOperationParam.new }
             it "returns a successful result", :aggregate_failures do
-              expect(result).to be_a_success
+              expect(operation).to succeed_on({})
             end
           end
 
           context "and calling without proper authorization" do
             subject(:operation) { AuthOperationParam.new(value: :OTHER) }
             it "returns a failed result", :aggregate_failures do
-              expect(result).to be_a_failure
-              expect(result.error.type).to eq(:forbidden)
+              expect(operation).to fail_on({}).with_type(:forbidden)
             end
           end
         end
@@ -115,15 +111,14 @@ module Pathway
           context "and calling with proper authorization" do
             subject(:operation) { AuthOperationMultiParam.new(value1: 10, value2: 20) }
             it "returns a successful result", :aggregate_failures do
-              expect(result).to be_a_success
+              expect(operation).to succeed_on({})
             end
           end
 
           context "and calling without proper authorization" do
             subject(:operation) { AuthOperationMultiParam.new(value1: -11, value2: 99) }
             it "returns a failed result", :aggregate_failures do
-              expect(result).to be_a_failure
-              expect(result.error.type).to eq(:forbidden)
+              expect(operation).to fail_on({}).with_type(:forbidden)
             end
           end
         end
@@ -132,15 +127,14 @@ module Pathway
           context "and calling with proper authorization" do
             subject(:operation) { AuthOperationWithArray.new(values: [3, 5]) }
             it "returns a successful result", :aggregate_failures do
-              expect(result).to be_a_success
+              expect(operation).to succeed_on({})
             end
           end
 
           context "and calling without proper authorization" do
             subject(:operation) { AuthOperationWithArray.new(values: [3, 4, 5]) }
             it "returns a failed result", :aggregate_failures do
-              expect(result).to be_a_failure
-              expect(result.error.type).to eq(:forbidden)
+              expect(operation).to fail_on({}).with_type(:forbidden)
             end
           end
         end

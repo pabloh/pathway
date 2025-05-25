@@ -84,8 +84,7 @@ module Pathway
         allow(notifier).to receive(:call)
       end
 
-      let(:input) { { foo: 'FOO' } }
-      let(:result) { operation.call(input) }
+      let(:valid_input) { { foo: 'FOO' } }
 
       describe ".process" do
         it "defines a 'call' method wich saves operation argument into the :input key" do
@@ -99,16 +98,19 @@ module Pathway
           operation.call(:my_input_test_value)
         end
 
+        let(:result) { operation.call(valid_input) }
+
         it "defines a 'call' method which returns a value using the key specified by 'result_at'" do
           expect(back_end).to receive(:call).and_return(:SOME_RETURN_VALUE)
 
+          expect(result).to be_a(Result)
           expect(result).to be_a_success
           expect(result.value).to eq(:SOME_RETURN_VALUE)
         end
       end
 
       describe ".call" do
-        let(:result) { OperationWithSteps.call(ctx, input) }
+        let(:result) { OperationWithSteps.call(ctx, valid_input) }
         it "creates a new instance an invokes the 'call' method on it" do
           expect(back_end).to receive(:call).and_return(:SOME_RETURN_VALUE)
 
@@ -133,7 +135,7 @@ module Pathway
             expect(state).to_not be_equal(old_state)
           end
 
-          operation.call(input)
+          operation.call(valid_input)
         end
       end
 
@@ -146,7 +148,7 @@ module Pathway
             expect(state.to_hash).to include(result_value: :SOME_VALUE)
           end
 
-          operation.call(input)
+          operation.call(valid_input)
         end
 
         it "defines an updating step which sets the specified key" do
@@ -160,9 +162,12 @@ module Pathway
             expect(state.to_hash).to include(aux_value: :RETURN_VALUE)
           end
 
-          operation.call(input)
+          operation.call(valid_input)
         end
       end
+
+
+      let(:result) { operation.call(valid_input) }
 
       describe "#step" do
         it "defines an non updating step" do
