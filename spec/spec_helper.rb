@@ -18,6 +18,7 @@ if ENV['CI']
 end
 
 require 'pathway'
+require 'pathway/rspec'
 require 'sequel'
 require 'pry'
 require 'pry-byebug'

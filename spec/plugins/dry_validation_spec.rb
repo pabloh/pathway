@@ -201,30 +201,25 @@ module Pathway
         let(:ctx)        { { user: double("User", role: role), repository: repository } }
         let(:role)       { :root }
         let(:params)     { { name: "Paul Smith", email: "psmith@email.com" } }
-        let(:result)     { operation.call(params) }
         let(:repository) { double.tap { |repo| allow(repo).to receive(:fetch).and_return(double) } }
 
         context "when calling with valid params" do
           it "returns a successful result", :aggregate_failures do
-            expect(result).to be_a_success
-            expect(result.value).to_not be_nil
+            expect(operation).to succeed_on(params).returning(anything)
           end
         end
 
         context "when finding model fails" do
           let(:repository) { double.tap { |repo| allow(repo).to receive(:fetch).and_return(nil) } }
           it "returns a a failed result", :aggregate_failures do
-            expect(result).to be_a_failure
-            expect(result.error.type).to eq(:not_found)
+            expect(operation).to fail_on(params).with_type(:not_found)
           end
         end
 
         context "when calling with invalid params" do
           let(:params) { { email: "psmith@email.com" } }
           it "returns a failed result", :aggregate_failures do
-            expect(result).to be_a_failure
-            expect(result.error.type).to eq(:validation)
-            expect(result.error.details).to eq(name: ['is missing'])
+            expect(operation).to fail_on(params).with_details(name: ['is missing'])
           end
         end
 

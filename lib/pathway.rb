@@ -201,7 +201,7 @@ module Pathway
 
         def _callable(callable)
           case callable
-          when Proc
+          when Proc # unless (callable.binding rescue nil)&.receiver == @operation
             ->(*args, **kwargs) { @operation.instance_exec(*args, **kwargs, &callable) }
           when Symbol
             ->(*args, **kwargs) { @operation.send(callable, *args, **kwargs) }
