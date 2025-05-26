@@ -197,7 +197,8 @@ module Pathway
             let(:operation) { InvalidUseOfCondOperation.new }
 
             it 'raises an error' do
-              expect { operation.call(params) }.to raise_error.with_message('options :if and :unless are mutually exclusive')
+              expect { operation.call(params) }.to raise_error.
+                with_message('options :if and :unless are mutually exclusive')
             end
           end
 
@@ -213,7 +214,8 @@ module Pathway
             let(:operation) { AmbivalentTransactOperation.new }
 
             it 'raises an error' do
-              expect { operation.call(params) }.to raise_error.with_message('must provide either a step or a block but not both')
+              expect { operation.call(params) }.to raise_error
+                .with_message('must provide either a step or a block but not both')
             end
           end
 
@@ -227,7 +229,8 @@ module Pathway
             let(:operation) { EmptyTransacOperation.new }
 
             it 'raises an error' do
-              expect { operation.call(params) }.to raise_error.with_message('must provide either a step or a block but not both')
+              expect { operation.call(params) }.to raise_error.
+                with_message('must provide either a step or a block but not both')
             end
           end
         end
@@ -254,10 +257,10 @@ module Pathway
               expect(operation).to fail_on(params)
             end
 
-            context 'when the execution state is changed bellow the after_commit callback' do
+            context 'and the execution state is changed bellow the after_commit callback' do
               let(:operation) { ChainedOperation.new(mailer: mailer) }
 
-              it 'ignores any state changes that took place subsequent to the after_commit block' do
+              it 'ignores any state changes that took place following the after_commit block' do
                 allow(MyModel).to receive(:first).with(params).and_return(model)
                 expect(mailer).to receive(:send_emails).with(model)
 
@@ -456,7 +459,8 @@ module Pathway
               let(:operation) { InvalidConditionalAfterCommitOperation.new }
 
               it 'raises an error' do
-                expect { operation.call(params) }.to raise_error.with_message('options :if and :unless are mutually exclusive')
+                expect { operation.call(params) }.to raise_error
+                  .with_message('options :if and :unless are mutually exclusive')
               end
             end
           end
@@ -475,7 +479,8 @@ module Pathway
             let(:operation) { AmbivalentAfterCommitOperation.new }
 
             it 'raises an error' do
-              expect { operation.call(params) }.to raise_error.with_message('must provide either a step or a block but not both')
+              expect { operation.call(params) }.to raise_error
+                .with_message('must provide either a step or a block but not both')
             end
           end
 
@@ -491,7 +496,272 @@ module Pathway
             let(:operation) { InvalidAfterCommitOperation.new }
 
             it 'raises an error' do
-              expect { operation.call(params) }.to raise_error.with_message('must provide either a step or a block but not both')
+              expect { operation.call(params) }.to raise_error.
+                with_message('must provide either a step or a block but not both')
+            end
+          end
+        end
+
+        describe '#after_rollback' do
+          class LoggerOperation < MyOperation
+            context :logger
+
+            process do
+              transaction do
+                after_rollback do
+                  step :log_error
+                end
+
+                step :fetch_model
+              end
+            end
+
+            def log_error(_)
+              @logger.log("Ohhh noes!!!!")
+            end
+          end
+
+          let(:logger) { double }
+
+          context 'when providing a block' do
+            class RollbackWithBlockOperation < LoggerOperation
+              process do
+                transaction do
+                  after_rollback do
+                    step :log_error
+                  end
+
+                  step :fetch_model
+                end
+              end
+            end
+
+            let(:operation) { RollbackWithBlockOperation.new(logger: logger) }
+            before { expect(DB).to receive(:transaction).and_call_original }
+
+            it 'calls after_rollback block when transaction fails' do
+              expect(MyModel).to receive(:first).with(params).and_return(nil)
+              expect(logger).to receive(:log)
+
+              expect(operation).to fail_on(params)
+            end
+
+            it 'does not call after_rollback block when transaction succeeds' do
+              expect(MyModel).to receive(:first).with(params).and_return(model)
+              expect(logger).to_not receive(:log)
+
+              expect(operation).to succeed_on(params)
+            end
+          end
+
+          context 'when providing a step' do
+            class RollbackStepOperation < LoggerOperation
+              process do
+                transaction do
+                  after_rollback :log_error
+                  step :fetch_model
+                end
+              end
+            end
+
+            let(:operation) { RollbackStepOperation.new(logger: logger) }
+            before { expect(DB).to receive(:transaction).and_call_original }
+
+            it 'calls after_rollback step when transaction fails' do
+              expect(MyModel).to receive(:first).with(params).and_return(nil)
+              expect(logger).to receive(:log)
+
+              expect(operation).to fail_on(params)
+            end
+
+            it 'does not call after_rollback step when transaction succeeds' do
+              expect(MyModel).to receive(:first).with(params).and_return(model)
+              expect(logger).to_not receive(:log)
+
+              expect(operation).to succeed_on(params)
+            end
+          end
+
+          context 'with conditional execution' do
+            context 'using :if with a block' do
+              class IfConditionalAfterRollbackOperation < LoggerOperation
+                context :should_run
+
+                process do
+                  transaction do
+                    after_rollback(if: :should_run?) do
+                      step :log_error
+                    end
+                    step :fetch_model
+                  end
+                end
+
+                private
+                def should_run?(state) = state[:should_run]
+              end
+
+              let(:operation) { IfConditionalAfterRollbackOperation.new(logger: logger, should_run: should_run) }
+              let(:params) { { email: 'asd@fgh.net' } }
+
+              before { allow(MyModel).to receive(:first).with(params).and_return(nil) }
+
+              context 'when the condition is true' do
+                let(:should_run) { true }
+
+                it 'executes the after_rollback block' do
+                  expect(logger).to receive(:log)
+
+                  expect(operation).to fail_on(params)
+                end
+              end
+
+              context 'when the condition is false' do
+                let(:should_run) { false }
+
+                it 'skips the after_rollback block' do
+                  expect(DB).to_not receive(:after_rollback)
+                  expect(logger).to_not receive(:log)
+
+                  expect(operation).to fail_on(params)
+                end
+              end
+            end
+
+            context 'using :unless with a block' do
+              class UnlessConditionalAfterRollbackOperation < LoggerOperation
+                context :should_skip
+
+                process do
+                  transaction do
+                    after_rollback(unless: :should_skip?) do
+                      step :log_error
+                    end
+                    step :fetch_model
+                  end
+                end
+
+                private
+                def should_skip?(state) = state[:should_skip]
+              end
+
+              let(:operation) { UnlessConditionalAfterRollbackOperation.new(logger: logger, should_skip: should_skip) }
+              let(:params) { { email: 'asd@fgh.net' } }
+
+              before { allow(MyModel).to receive(:first).with(params).and_return(nil) }
+
+              context 'when the condition is false' do
+                let(:should_skip) { false }
+
+                it 'executes the after_rollback block' do
+                  expect(logger).to receive(:log)
+
+                  expect(operation).to fail_on(params)
+                end
+              end
+
+              context 'when the condition is true' do
+                let(:should_skip) { true }
+
+                it 'skips the after_rollback block' do
+                  expect(DB).to_not receive(:after_rollback)
+                  expect(logger).to_not receive(:log)
+
+                  expect(operation).to fail_on(params)
+                end
+              end
+            end
+
+            context 'using :if with step name' do
+              class IfStepConditionalAfterRollbackOperation < LoggerOperation
+                context :should_run
+
+                process do
+                  transaction do
+                    after_rollback :log_error, if: :should_run?
+                    step :fetch_model
+                  end
+                end
+
+                private
+                def should_run?(state) = state[:should_run]
+              end
+
+              before { allow(MyModel).to receive(:first).with(email: 'asd@fgh.net').and_return(nil) }
+              let(:operation) { IfStepConditionalAfterRollbackOperation.new(logger: logger, should_run: should_run) }
+
+              context 'when the condition is true' do
+                let(:should_run) { true }
+
+                it 'executes the after_rollback step' do
+                  expect(logger).to receive(:log)
+
+                  expect(operation).to fail_on(params)
+                end
+              end
+
+              context 'when the condition is false' do
+                let(:should_run) { false }
+
+                it 'skips the after_rollback step' do
+                  expect(DB).to_not receive(:after_rollback)
+                  expect(logger).to_not receive(:log)
+
+                  expect(operation).to fail_on(params)
+                end
+              end
+            end
+
+            context 'when both :if and :unless are provided' do
+              class InvalidConditionalAfterRollbackOperation < LoggerOperation
+                process do
+                  transaction do
+                    after_rollback :log_error, if: :is_good?, unless: :is_bad?
+                  end
+                end
+              end
+
+              let(:operation) { InvalidConditionalAfterRollbackOperation.new(logger: logger) }
+
+              it 'raises an error' do
+                expect { operation.call(params) }.to raise_error
+                  .with_message('options :if and :unless are mutually exclusive')
+              end
+            end
+          end
+
+          context 'when providing a block and a step' do
+            class AmbivalentAfterRollbackOperation < MyOperation
+              process do
+                transaction do
+                  after_rollback :perform_db_action do
+                    step :perform_other_db_action
+                  end
+                end
+              end
+            end
+
+            let(:operation) { AmbivalentAfterRollbackOperation.new }
+
+            it 'raises an error' do
+              expect { operation.call(params) }.to raise_error
+                .with_message('must provide either a step or a block but not both')
+            end
+          end
+
+          context 'when not providing a block nor a step' do
+            class InvalidAfterRollbackOperation < MyOperation
+              process do
+                transaction do
+                  after_rollback
+                end
+              end
+            end
+
+            let(:operation) { InvalidAfterRollbackOperation.new }
+
+            it 'raises an error' do
+              expect { operation.call(params) }.to raise_error
+                .with_message('must provide either a step or a block but not both')
             end
           end
         end

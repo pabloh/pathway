@@ -6,54 +6,44 @@ module Pathway
   module Plugins
     module SequelModels
       module DSLMethods
-        def transaction(step_name = nil, if: nil, unless: nil, &)
-          cond, dsl_bl = _transact_opts(step_name, *%i[if unless].map { binding.local_variable_get(_1) }, &)
-
-          if cond
-            if_true(cond) { transaction(&dsl_bl) }
-          else
-            around(->(runner, _) {
-              db.transaction(savepoint: true) do
-                raise Sequel::Rollback if runner.call.failure?
-              end
-            }, &dsl_bl)
+        def transaction(step_name = nil, if: nil, unless: nil, &steps)
+          _with_db_steps(steps, step_name, *_opts_if_unless(binding)) do |runner|
+            db.transaction(savepoint: true) do
+              raise Sequel::Rollback if runner.call.failure?
+            end
           end
         end
 
-        def after_commit(step_name = nil, if: nil, unless: nil, &)
-          cond, dsl_bl = _transact_opts(step_name, *%i[if unless].map { binding.local_variable_get(_1) }, &)
+        def after_commit(step_name = nil, if: nil, unless: nil, &steps)
+          _with_db_steps(steps, step_name, *_opts_if_unless(binding)) do |runner, state|
+            dsl_copy = _new_dsl(state)
+            db.after_commit { runner.call(dsl_copy) }
+          end
+        end
 
-          if cond
-            if_true(cond) { after_commit(&dsl_bl) }
-          else
-            around(->(runner, state) {
-              dsl_copy = self.class::DSL.new(State.new(self, state.to_h.dup), self)
-
-              db.after_commit do
-                runner.call(dsl_copy)
-              end
-            }, &dsl_bl)
+        def after_rollback(step_name = nil, if: nil, unless: nil, &steps)
+          _with_db_steps(steps, step_name, *_opts_if_unless(binding)) do |runner, state|
+            dsl_copy = _new_dsl(state)
+            db.after_rollback(savepoint: true) { runner.call(dsl_copy) }
           end
         end
 
         private
 
-        def _transact_opts(step_name, if_cond, unless_cond, &bl)
-          dsl = if !step_name.nil? == block_given?
-                  raise ArgumentError, 'must provide either a step or a block but not both'
-                else
-                  bl || proc { step step_name }
-                end
+        def _opts_if_unless(bg) = %i[if unless].map { bg.local_variable_get(_1) }
 
-          cond = if if_cond && unless_cond
-                   raise ArgumentError, 'options :if and :unless are mutually exclusive'
-                 elsif if_cond
-                   if_cond
-                 elsif unless_cond
-                   _callable(unless_cond) >> :!.to_proc
-                 end
+        def _with_db_steps(steps, step_name=nil, if_cond=nil, unless_cond=nil, &db_logic)
+          raise ArgumentError, 'options :if and :unless are mutually exclusive' if if_cond && unless_cond
+          raise ArgumentError, 'must provide either a step or a block but not both' if !!step_name == !!steps
+          steps ||= proc { step step_name }
 
-          return cond, dsl
+          if if_cond
+            if_true(if_cond) { _with_db_steps(steps, &db_logic) }
+          elsif unless_cond
+            if_false(unless_cond) { _with_db_steps(steps, &db_logic) }
+          else
+            around(db_logic, &steps)
+          end
         end
       end
 
