@@ -198,7 +198,7 @@ module Pathway
           expect(result.value).to eq(:UPDATED)
         end
 
-        it "is skiped altogether on a failure state" do
+        it "is skipped altogether on a failure state" do
           allow(back_end).to receive(:call).and_return(Result.failure(:not_available))
           expect(cond).to_not receive(:call)
 
@@ -209,6 +209,46 @@ module Pathway
           allow(back_end).to receive(:call).and_return(0)
 
           expect(result.value).to eq(:ZERO)
+        end
+
+        context "when running callbacks after the operation has failled" do
+          let(:logger) { double}
+          let(:operation) { OperationWithCallbacks.new(logger: logger) }
+          let(:operation_class) do
+            Class.new(Operation) do
+              context :logger
+
+              process do
+                around(:cleanup_callback_context) do
+                  around(:put_steps_in_callback) do
+                    set  -> _ { :SHOULD_NOT_BE_SET }
+                    step -> _ { logger.log("calling back from callback") }
+                  end
+                  step :failing_step
+                end
+              end
+
+              def failing_step(_) = error(:im_a_failure!)
+
+              def put_steps_in_callback(runner, st)
+                st[:callbacks] << -> { runner.call(_dsl_for(st)) }
+              end
+
+              def cleanup_callback_context(runner, st)
+                st[:callbacks] = []
+                runner.call
+                st[:callbacks].each(&:call)
+              end
+            end
+          end
+
+          before { stub_const("OperationWithCallbacks", operation_class) }
+
+          it "does not alter the operation result when callback runs after failure" do
+            expect(logger).to receive(:log).with("calling back from callback")
+
+            expect(operation).to fail_on(valid_input).with_type(:im_a_failure!)
+          end
         end
       end
 

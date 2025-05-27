@@ -103,7 +103,7 @@ module Pathway
 
         def process(&steps)
           define_method(:call) do |input|
-            _new_dsl(input:)
+            _dsl_for(input:)
                .run(&steps)
                .then(&:result)
           end
@@ -137,7 +137,7 @@ module Pathway
 
         private
 
-        def _new_dsl(vals) = self.class::DSL.new(State.new(self, vals), self)
+        def _dsl_for(vals) = self.class::DSL.new(State.new(self, vals), self)
       end
 
       def self.apply(klass)

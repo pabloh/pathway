@@ -16,14 +16,14 @@ module Pathway
 
         def after_commit(step_name = nil, if: nil, unless: nil, &steps)
           _with_db_steps(steps, step_name, *_opts_if_unless(binding)) do |runner, state|
-            dsl_copy = _new_dsl(state)
+            dsl_copy = _dsl_for(state)
             db.after_commit { runner.call(dsl_copy) }
           end
         end
 
         def after_rollback(step_name = nil, if: nil, unless: nil, &steps)
           _with_db_steps(steps, step_name, *_opts_if_unless(binding)) do |runner, state|
-            dsl_copy = _new_dsl(state)
+            dsl_copy = _dsl_for(state)
             db.after_rollback(savepoint: true) { runner.call(dsl_copy) }
           end
         end
