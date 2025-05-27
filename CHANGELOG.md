@@ -3,7 +3,7 @@
 - Added `:if` and `:unless` options for `:transaction` and `:after_commit` methods at `:sequel_models` plugin
 - Added `:after_rollback` method at `:sequel_models` plugin
 ### Fixed
-- Fixed a situation where setting a callback inside an `around` block could unexpectedly change the operation's result
+- Fixed bug where setting a callback inside an `around` block could unexpectedly change the operation's result
 
 ## [1.0.0] - 2025-05-19
 ### Changed
