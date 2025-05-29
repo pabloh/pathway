@@ -101,11 +101,10 @@ module Pathway
 
         alias_method :result_at, :result_key=
 
-        def process(&bl)
-          dsl = self::DSL
+        def process(&steps)
           define_method(:call) do |input|
-            dsl.new(State.new(self, input:), self)
-               .run(&bl)
+            _dsl_for(input:)
+               .run(&steps)
                .then(&:result)
           end
         end
@@ -135,6 +134,10 @@ module Pathway
         def wrap_if_present(value, type: :not_found, message: nil, details: {})
           value.nil? ? error(type, message:, details:) : success(value)
         end
+
+        private
+
+        def _dsl_for(vals) = self.class::DSL.new(State.new(self, vals), self)
       end
 
       def self.apply(klass)
@@ -147,8 +150,8 @@ module Pathway
           @result, @operation = wrap(state), operation
         end
 
-        def run(&bl)
-          instance_eval(&bl)
+        def run(&steps)
+          instance_eval(&steps)
           @result
         end
 
@@ -174,22 +177,21 @@ module Pathway
           @result = @result.then { |state| bl.call(state,...) }
         end
 
-        def around(execution_strategy, &dsl_block)
+        def around(execution_strategy, &steps)
           @result.then do |state|
-            dsl_runner = ->(dsl = self) { @result = dsl.run(&dsl_block) }
+            steps_runner = ->(dsl = self) { dsl.run(&steps) }
 
-            _callable(execution_strategy).call(dsl_runner, state)
+            _callable(execution_strategy).call(steps_runner, state)
           end
         end
 
-        def if_true(cond, &dsl_block)
+        def if_true(cond, &steps)
           cond = _callable(cond)
-          around(->(dsl_runner, state) { dsl_runner.call if cond.call(state) }, &dsl_block)
+          around(->(runner, state) { runner.call if cond.call(state) }, &steps)
         end
 
-        def if_false(cond, &dsl_block)
-          cond = _callable(cond)
-          if_true(->(state) { !cond.call(state) }, &dsl_block)
+        def if_false(cond, &steps)
+          if_true(_callable(cond) >> :!.to_proc, &steps)
         end
 
         alias_method :sequence, :around
