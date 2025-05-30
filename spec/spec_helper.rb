@@ -14,6 +14,7 @@ if ENV['CI']
 
     formatter SimpleCov::Formatter::LcovFormatter
     add_filter '/spec/'
+    add_filter '/lib/pathway/rspec'
   end
 end
 
