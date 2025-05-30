@@ -764,6 +764,75 @@ module Pathway
                 .with_message('must provide either a step or a block but not both')
             end
           end
+
+          context 'when nesting operations with rollback callbacks' do
+            class InnerFailingOperation < MyOperation
+              context :notifier
+
+              process do
+                transaction do
+                  after_rollback :notify_inner_rollback
+                  step :fail_step
+                end
+                step :after_transaction_step
+              end
+
+              def fail_step(state)
+                @notifier.inner_fail_step
+                error(:inner_operation_failed)
+              end
+
+              def notify_inner_rollback(state)= @notifier.inner_rollback
+              def after_transaction_step(state)= @notifier.inner_after_transaction
+            end
+
+            class OuterOperationWithRollback < MyOperation
+              context :notifier
+
+              process do
+                transaction do
+                  after_rollback :notify_outer_rollback
+                  step :call_inner_operation
+                  step :after_inner_call_step
+                  step :fail_again
+                end
+                step :final_step
+              end
+
+              def call_inner_operation(state)
+                state[:inner_result] = InnerFailingOperation.call({ notifier: @notifier }, state[:input])
+                state
+              end
+
+              def fail_again(state)
+                @notifier.outter_fail_step
+
+                error(:outter_operation_failed) if state[:inner_result].failure?
+              end
+
+              def notify_outer_rollback(state)= @notifier.outer_rollback
+              def after_inner_call_step(state)= @notifier.after_inner_call_step
+              def final_step(state)= @notifier.final_step
+            end
+
+            let(:notifier) { spy }
+            let(:operation) { OuterOperationWithRollback.new(notifier: notifier) }
+
+            it 'executes rollback callbacks in the correct order when inner operation fails' do
+              expect(notifier).to receive(:inner_fail_step)
+              expect(notifier).to receive(:inner_rollback)
+              expect(notifier).to receive(:after_inner_call_step)
+              expect(notifier).to receive(:outter_fail_step)
+              expect(notifier).to receive(:outer_rollback)
+
+              # Verify calls that should NOT happen
+              expect(notifier).to_not receive(:inner_after_transaction)
+              expect(notifier).to_not receive(:final_step)
+
+              expect(operation).to fail_on(zzz: :XXXXXXXXXXXXX)
+                .with_type(:outter_operation_failed)
+            end
+          end
         end
       end
 
