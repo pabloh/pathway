@@ -1,3 +1,7 @@
+## [1.2.0] - 2025-06-01
+### Changed
+- Removed deprecated `:auto_wire_options` option from `:dry_validation` plugin
+
 ## [1.1.0] - 2025-05-30
 ### Added
 - Added `:if` and `:unless` options for `:transaction` and `:after_commit` methods at `:sequel_models` plugin

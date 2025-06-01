@@ -231,7 +231,7 @@ module Pathway
             expect(operation.call(qux: 'OTHER')).to be_a_failure
           end
 
-          context "and is using auto_wire_options" do
+          context "and is using auto_wire: true" do
             subject(:operation) { OperationWithAutoWire.new(baz: 'XXXXX') }
 
             it "sets the options directly from the context using the keys with the same name" do
