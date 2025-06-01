@@ -9,9 +9,6 @@ module Pathway
         attr_reader :contract_class, :contract_options
         attr_accessor :auto_wire
 
-        alias_method :auto_wire_options, :auto_wire
-        alias_method :auto_wire_options=, :auto_wire=
-
         def contract(base = nil, &)
           if block_given?
             base ||= _base_contract
@@ -53,7 +50,7 @@ module Pathway
       module InstanceMethods
         extend Forwardable
 
-        delegate %i[build_contract contract_options auto_wire_options auto_wire] => 'self.class'
+        delegate %i[build_contract contract_options auto_wire] => 'self.class'
         alias_method :contract, :build_contract
 
         def validate(state, with: nil)
@@ -72,13 +69,7 @@ module Pathway
         end
       end
 
-      def self.apply(operation, auto_wire_options: (auto_wire_options_was_not_used=true; false), auto_wire: auto_wire_options)
-        #:nocov:
-        unless auto_wire_options_was_not_used
-          warn "[DEPRECATION] `auto_wire_options` is deprecated. Please use `auto_wire` instead"
-        end
-        #:nocov:
-
+      def self.apply(operation, auto_wire: false)
         operation.auto_wire      = auto_wire
         operation.contract_class = Dry::Validation::Contract
       end

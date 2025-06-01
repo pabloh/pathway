@@ -13,6 +13,7 @@ module Pathway
         attr_accessor :bar
 
         def inherited(subclass)
+          super
           subclass.bar = bar
         end
       end
