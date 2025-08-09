@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'dry/validation'
+require "dry/validation"
 
 module Pathway
   module Plugins
@@ -16,7 +16,7 @@ module Pathway
           elsif base
             self.contract_class = base
           else
-            raise ArgumentError, 'Either a contract class or a block must be provided'
+            raise ArgumentError, "Either a contract class or a block must be provided"
           end
         end
 
@@ -24,7 +24,7 @@ module Pathway
           contract { params(...) }
         end
 
-        def contract_class= klass
+        def contract_class=(klass)
           @contract_class   = klass
           @contract_options = (klass.dry_initializer.options - Dry::Validation::Contract.dry_initializer.options).map(&:target)
           @builded_contract = @contract_options.empty? && klass.schema ? klass.new : nil
@@ -50,14 +50,14 @@ module Pathway
       module InstanceMethods
         extend Forwardable
 
-        delegate %i[build_contract contract_options auto_wire] => 'self.class'
+        delegate %i[build_contract contract_options auto_wire] => "self.class"
         alias_method :contract, :build_contract
 
         def validate(state, with: nil)
           if auto_wire && contract_options.any?
             with ||= contract_options.zip(contract_options).to_h
           end
-          opts = Hash(with).map { |to, from| [to, state[from]] }.to_h
+          opts = Hash(with).transform_values { |from| state[from] }
           validate_with(state[:input], **opts)
             .then { |params| state.update(params:) }
         end
