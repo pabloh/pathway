@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'pathway/rspec/matchers/field_list_helpers'
+require "pathway/rspec/matchers/field_list_helpers"
 
 module Pathway
   module Rspec

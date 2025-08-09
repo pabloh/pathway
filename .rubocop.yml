@@ -1,0 +1,61 @@
+# The behavior of RuboCop can be controlled via the .rubocop.yml
+# configuration file. It makes it possible to enable/disable
+# certain cops (checks) and to alter their behavior if they accept
+# any parameters. The file can be placed either in your home
+# directory or in some project directory.
+#
+# RuboCop will start looking for the configuration file in the directory
+# where the inspected file is and continue its way up to the root directory.
+#
+# See https://docs.rubocop.org/rubocop/configuration
+
+require: rubocop-performance
+
+AllCops:
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - 'bin/*'
+
+Style/Lambda:
+  Enabled: false
+
+Style/Alias:
+  EnforcedStyle: prefer_alias_method
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/HashSyntax:
+  Exclude:
+    - Rakefile
+
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*.rb'
+    - 'lib/pathway/rspec/matchers/*.rb'
+
+Layout/EmptyLinesAroundBlockBody:
+  Exclude:
+    - 'spec/**/*.rb'
+
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented_relative_to_receiver
+
+Naming/MethodParameterName:
+  MinNameLength: 2
+
+Style/ParallelAssignment:
+  Enabled: False
+
+Style/CaseEquality:
+  Enabled: False
+
+Style/Documentation:
+  Enabled: false
+
+Lint/MissingSuper:
+  AllowedParentClasses: [Result]
+
+Style/AccessModifierDeclarations:
+  AllowModifiersOnAliasMethod: true

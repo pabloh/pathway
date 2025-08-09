@@ -34,7 +34,7 @@ module Pathway
         def respond
           if @result.success?
             @context.instance_exec(@result.value, &@ok)
-          elsif Error === @result.error && fail_block = @fails[@result.error.type]
+          elsif Error === @result.error && (fail_block = @fails[@result.error.type])
             @context.instance_exec(@result.error, &fail_block)
           else
             @context.instance_exec(@result.error, &@fail_default)

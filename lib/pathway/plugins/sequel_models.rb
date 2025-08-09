@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'sequel/model'
+require "sequel/model"
 
 module Pathway
   module Plugins
@@ -33,8 +33,8 @@ module Pathway
         def _opts_if_unless(bg) = %i[if unless].map { bg.local_variable_get(_1) }
 
         def _with_db_steps(steps, step_name=nil, if_cond=nil, unless_cond=nil, &db_logic)
-          raise ArgumentError, 'options :if and :unless are mutually exclusive' if if_cond && unless_cond
-          raise ArgumentError, 'must provide either a step or a block but not both' if !!step_name == !!steps
+          raise ArgumentError, "options :if and :unless are mutually exclusive" if if_cond && unless_cond
+          raise ArgumentError, "must provide either a step or a block but not both" if !!step_name == !!steps
           steps ||= proc { step step_name }
 
           if if_cond
@@ -69,7 +69,7 @@ module Pathway
 
       module InstanceMethods
         extend Forwardable
-        delegate %i[model_class search_field model_not_found] => 'self.class'
+        delegate %i[model_class search_field model_not_found] => "self.class"
         delegate :db => :model_class
 
         def fetch_model(state, from: model_class, search_by: search_field, using: search_by, to: result_key, overwrite: false, error_message: nil)
@@ -77,7 +77,7 @@ module Pathway
                               model_not_found
                             elsif from.respond_to?(:name) || from.respond_to?(:model)
                               from_name = (from.respond_to?(:name) ? from : from.model).name
-                              Inflector.humanize(Inflector.underscore(Inflector.demodulize(from_name))) + ' not found'
+                              Inflector.humanize(Inflector.underscore(Inflector.demodulize(from_name))) + " not found"
                             end
 
           if state[to].nil? || overwrite

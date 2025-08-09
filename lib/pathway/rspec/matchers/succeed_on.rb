@@ -8,7 +8,8 @@ RSpec::Matchers.define :succeed_on do |input|
   end
 
   match_when_negated do |operation|
-    raise NotImplementedError, '`expect().not_to succeed_on(input).returning()` is not supported.' if @value
+    raise NotImplementedError, "`expect().not_to succeed_on(input).returning()` is not supported." if @value
+
     @operation, @input = operation, input
 
     !success?
@@ -31,7 +32,7 @@ RSpec::Matchers.define :succeed_on do |input|
   end
 
   failure_message_when_negated do
-    'Did not to expected operation to be successful but it was'
+    "Did not to expected operation to be successful but it was"
   end
 
   def success?

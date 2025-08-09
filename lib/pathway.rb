@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'forwardable'
-require 'dry/inflector'
-require 'contextualizer'
-require 'pathway/version'
-require 'pathway/result'
+require "forwardable"
+require "dry/inflector"
+require "contextualizer"
+require "pathway/version"
+require "pathway/result"
 
 module Pathway
   Inflector = Dry::Inflector.new
@@ -72,16 +72,16 @@ module Pathway
     def to_hash = @hash
 
     def use(&bl)
-      raise ArgumentError, 'a block must be provided' if !block_given?
+      raise ArgumentError, "a block must be provided" if !block_given?
       if bl.parameters in [*, [:rest|:keyrest,], *]
-        raise ArgumentError, 'rest arguments are not supported'
+        raise ArgumentError, "rest arguments are not supported"
       end
 
       keys = bl.parameters.select { _1 in :key|:keyreq, }.map(&:last)
       names = bl.parameters.select { _1 in :req|:opt, }.map(&:last)
 
       if keys.any? && names.any?
-        raise ArgumentError, 'cannot mix positional and keyword arguments'
+        raise ArgumentError, "cannot mix positional and keyword arguments"
       elsif keys.any?
         bl.call(**to_hash.slice(*keys))
       else
@@ -120,12 +120,12 @@ module Pathway
       module InstanceMethods
         extend Forwardable
 
-        delegate :result_key => 'self.class'
+        delegate :result_key => "self.class"
         delegate %i[result success failure] => Result
 
         alias_method :wrap, :result
 
-        def call(*) = raise 'must implement at subclass'
+        def call(*) = raise "must implement at subclass"
 
         def error(type, message: nil, details: nil)
           failure(Error.new(type:, message:, details:))
