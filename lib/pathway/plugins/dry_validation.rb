@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'dry/validation'
+require "dry/validation"
 
 module Pathway
   module Plugins
@@ -16,7 +16,7 @@ module Pathway
           elsif base
             self.contract_class = base
           else
-            raise ArgumentError, 'Either a contract class or a block must be provided'
+            raise ArgumentError, "Either a contract class or a block must be provided"
           end
         end
 
@@ -50,7 +50,7 @@ module Pathway
       module InstanceMethods
         extend Forwardable
 
-        delegate %i[build_contract contract_options auto_wire] => 'self.class'
+        delegate %i[build_contract contract_options auto_wire] => "self.class"
         alias_method :contract, :build_contract
 
         def validate(state, with: nil)

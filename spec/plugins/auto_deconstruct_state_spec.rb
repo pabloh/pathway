@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require "spec_helper"
 
 module Pathway
   module Plugins
-    describe 'AutoDeconstructState' do
+    describe "AutoDeconstructState" do
       class KwargsOperation < Operation
         plugin :auto_deconstruct_state
 
@@ -34,8 +34,8 @@ module Pathway
           UserModel.new(name, email)
         end
 
-        def notify(s)
-          s.u do |value:|
+        def notify(st)
+          st.u do |value:|
             @notifier.call(value)
           end
         end
@@ -47,8 +47,8 @@ module Pathway
         subject(:operation) { KwargsOperation.new(ctx) }
 
         let(:ctx)        { { validator: validator, name_repo: name_repo, email_repo: email_repo, notifier: notifier } }
-        let(:name)       { 'Paul Smith' }
-        let(:email)      { 'psmith@email.com' }
+        let(:name)       { "Paul Smith" }
+        let(:email)      { "psmith@email.com" }
         let(:input)      { { id: 99 } }
 
         let(:validator) do
@@ -81,7 +81,7 @@ module Pathway
           end
         end
 
-        it 'destructure arguments on steps with only kwargs', :aggregate_failures do
+        it "destructure arguments on steps with only kwargs", :aggregate_failures do
           operation.call(input)
         end
       end

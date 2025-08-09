@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require "spec_helper"
 
 module Pathway
   module Plugins
-    describe 'DryValidation' do
+    describe "DryValidation" do
       class SimpleOperation < Operation
         plugin :dry_validation
 
@@ -54,7 +54,7 @@ module Pathway
           end
 
           rule(:qux) do
-            key.failure('not equal to :foo') unless value == foo
+            key.failure("not equal to :foo") unless value == foo
           end
         end
 
@@ -76,7 +76,7 @@ module Pathway
           end
 
           rule(:qux) do
-            key.failure('not equal to :foo') unless value == baz
+            key.failure("not equal to :foo") unless value == baz
           end
         end
 
@@ -178,13 +178,13 @@ module Pathway
         context "when called with no block nor contract" do
           subject(:opr_class) { Class.new(Operation) { plugin :dry_validation } }
 
-          it 'raises an error' do
+          it "raises an error" do
             expect { opr_class.contract }
-              .to raise_error(ArgumentError, 'Either a contract class or a block must be provided')
+              .to raise_error(ArgumentError, "Either a contract class or a block must be provided")
           end
         end
 
-        context 'when the operation is inherited' do
+        context "when the operation is inherited" do
           let(:opr_class) { OperationWithAutoWire }
           subject(:opr_subclass) { Class.new(OperationWithAutoWire) }
 
@@ -219,24 +219,24 @@ module Pathway
         context "when calling with invalid params" do
           let(:params) { { email: "psmith@email.com" } }
           it "returns a failed result", :aggregate_failures do
-            expect(operation).to fail_on(params).with_details(name: ['is missing'])
+            expect(operation).to fail_on(params).with_details(name: ["is missing"])
           end
         end
 
         context "when contract requires options for validation" do
-          subject(:operation) { OperationWithOpt.new(quz: 'XXXXX') }
+          subject(:operation) { OperationWithOpt.new(quz: "XXXXX") }
 
           it "sets then passing a hash through the :with argument" do
-            expect(operation.call(qux: 'XXXXX')).to be_a_success
-            expect(operation.call(qux: 'OTHER')).to be_a_failure
+            expect(operation.call(qux: "XXXXX")).to be_a_success
+            expect(operation.call(qux: "OTHER")).to be_a_failure
           end
 
           context "and is using auto_wire: true" do
-            subject(:operation) { OperationWithAutoWire.new(baz: 'XXXXX') }
+            subject(:operation) { OperationWithAutoWire.new(baz: "XXXXX") }
 
             it "sets the options directly from the context using the keys with the same name" do
-              expect(operation.call(qux: 'XXXXX')).to be_a_success
-              expect(operation.call(qux: 'OTHER')).to be_a_failure
+              expect(operation.call(qux: "XXXXX")).to be_a_success
+              expect(operation.call(qux: "OTHER")).to be_a_failure
             end
           end
         end

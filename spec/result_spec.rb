@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require "spec_helper"
 
 module Pathway
   describe Result do
@@ -51,7 +51,7 @@ module Pathway
 
       describe "#then" do
         let(:callable) { double }
-        let(:next_result) { Result.success("NEW VALUE")}
+        let(:next_result) { Result.success("NEW VALUE") }
         before { expect(callable).to receive(:call).with("VALUE").and_return(next_result) }
 
         it "if a block is given it executes it and returns the new result" do
@@ -65,7 +65,7 @@ module Pathway
 
       describe "#tee" do
         let(:callable) { double }
-        let(:next_result) { Result.success("NEW VALUE")}
+        let(:next_result) { Result.success("NEW VALUE") }
         before { expect(callable).to receive(:call).with("VALUE").and_return(next_result) }
 
         it "if a block is given it executes it and keeps the previous result" do
