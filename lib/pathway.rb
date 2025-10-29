@@ -56,7 +56,7 @@ module Pathway
 
   class State
     extend Forwardable
-    delegate %i([] []= fetch store include? values_at deconstruct_keys) => :@hash
+    delegate %i[[] []= fetch store include? values_at deconstruct_keys] => :@hash
 
     def initialize(operation, values = {})
       @hash = operation.context.merge(values)
@@ -156,27 +156,17 @@ module Pathway
         end
 
         # Execute step and preserve the former state
-        def step(callable,...)
-          #:nocov:
-          if block_given?
-            warn "[DEPRECATION] Passing a block to the step method using `DSLMethods#step` is deprecated"
-          end
-          #:nocov:
-          bl = _callable(callable)
-          @result = @result.tee { |state| bl.call(state,...) }
+        def step(callable,*,**, &)
+          bl = _callable(callable, &)
+          @result = @result.tee { |state| bl.call(state,*,**) }
         end
 
         # Execute step and modify the former state setting the key
-        def set(callable, *args, to: @operation.result_key, **kwargs, &bl)
-          #:nocov:
-          if block_given?
-            warn "[DEPRECATION] Passing a block to the step method using `DSLMethods#set` is deprecated"
-          end
-          #:nocov:
-          bl = _callable(callable)
+        def set(callable, *args, to: @operation.result_key, **kwargs, &)
+          bl = _callable(callable, &)
 
           @result = @result.then do |state|
-            wrap(bl.call(state, *args, **kwargs, &bl))
+            wrap(bl.call(state, *args, **kwargs))
               .then { |value| state.update(to => value) }
           end
         end
@@ -214,14 +204,21 @@ module Pathway
 
         def wrap(obj) = Result.result(obj)
 
-        def _callable(callable)
-          case callable
-          when Proc # unless (callable.binding rescue nil)&.receiver == @operation
-            ->(*args, **kwargs) { @operation.instance_exec(*args, **kwargs, &callable) }
-          when Symbol
-            ->(*args, **kwargs) { @operation.send(callable, *args, **kwargs) }
+        def _callable(callable, &bl)
+          if block_given?
+            raise ArgumentError, 'You must either pass a block or a callable but not both' if !callable.is_a?(Symbol)
+            warn "The operation already responds to a message of the same name" if @operation.responds_to?(callable)
+
+            ->(*args, **kwargs) { @operation.instance_exec(*args, **kwargs, &bl) }
           else
-            callable
+            case callable
+            when Proc
+              ->(*args, **kwargs) { @operation.instance_exec(*args, **kwargs, &callable) }
+            when Symbol
+              ->(*args, **kwargs) { @operation.send(callable, *args, **kwargs) }
+            else
+              callable
+            end
           end
         end
       end
