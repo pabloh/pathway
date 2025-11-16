@@ -1,4 +1,8 @@
-## [1.2.0] - 2025-06-01
+## [1.2.0] - 2025-11-16
+### Deprecated
+- Deprecate passing a block to the step method using `DSLMethods#step`
+- Deprecate passing a block to the step method using `DSLMethods#set`
+- Deprecate `DSLMethods#map`
 ### Changed
 - Removed deprecated `:auto_wire_options` option from `:dry_validation` plugin
 

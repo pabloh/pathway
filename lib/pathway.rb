@@ -157,12 +157,22 @@ module Pathway
 
         # Execute step and preserve the former state
         def step(callable,...)
+          #:nocov:
+          if block_given?
+            warn "[DEPRECATION] Passing a block to the step method using `DSLMethods#step` is deprecated"
+          end
+          #:nocov:
           bl = _callable(callable)
           @result = @result.tee { |state| bl.call(state,...) }
         end
 
         # Execute step and modify the former state setting the key
         def set(callable, *args, to: @operation.result_key, **kwargs, &bl)
+          #:nocov:
+          if block_given?
+            warn "[DEPRECATION] Passing a block to the step method using `DSLMethods#set` is deprecated"
+          end
+          #:nocov:
           bl = _callable(callable)
 
           @result = @result.then do |state|
@@ -173,6 +183,9 @@ module Pathway
 
         # Execute step and replace the current state completely
         def map(callable,...)
+          #:nocov:
+          warn "[DEPRECATION] `Pathway::DSLMethods#map` has been deprecated, use `step` instead"
+          #:nocov:
           bl = _callable(callable)
           @result = @result.then { |state| bl.call(state,...) }
         end
