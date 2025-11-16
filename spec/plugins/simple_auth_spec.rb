@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require "spec_helper"
 
 module Pathway
   module Plugins
-    describe 'SimpleAuth' do
+    describe "SimpleAuth" do
       class AuthOperation < Operation
         plugin :simple_auth
 
@@ -59,14 +59,14 @@ module Pathway
 
         context "with no options" do
           it "passes the current result to the authorization block to authorize", :aggregate_failures do
-            expect(operation.authorize({value: :RESULT})).to be_a_success
+            expect(operation.authorize({ value: :RESULT })).to be_a_success
           end
         end
 
         context "with :using argument" do
           it "passes then value for :key from the context to the authorization block to authorize", :aggregate_failures do
-            expect(operation.authorize({foo: :RESULT}, using: :foo)).to be_a_success
-            expect(operation.authorize({foo: :ELSE}, using: :foo)).to be_a_failure
+            expect(operation.authorize({ foo: :RESULT }, using: :foo)).to be_a_success
+            expect(operation.authorize({ foo: :ELSE }, using: :foo)).to be_a_failure
           end
         end
       end

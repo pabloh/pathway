@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require "spec_helper"
 
 module Pathway
   module Plugins
-    describe 'SequelModels' do
+    describe "SequelModels" do
       DB = Sequel.mock
       MyModel = Class.new(Sequel::Model(DB[:foo])) { set_primary_key :pk }
 
@@ -58,18 +58,18 @@ module Pathway
         end
       end
 
-      describe 'DSL' do
-        let(:params) { { email: 'asd@fgh.net' } }
+      describe "DSL" do
+        let(:params) { { email: "asd@fgh.net" } }
         let(:model)  { double }
 
         let(:mailer) { double.tap { |d| allow(d).to receive(:send_emails) } }
 
-        describe '#transaction' do
-          context 'when providing a block' do
+        describe "#transaction" do
+          context "when providing a block" do
             let(:operation) { MailerOperation.new(mailer: mailer) }
             before { allow(DB).to receive(:transaction).and_call_original }
 
-            it 'returns the result state provided by the inner transaction when successful' do
+            it "returns the result state provided by the inner transaction when successful" do
               allow(MyModel).to receive(:first).with(params).and_return(model)
 
               expect(operation).to succeed_on(params).returning(model: model)
@@ -81,7 +81,7 @@ module Pathway
               expect(operation).to fail_on(params).with_type(:not_found)
             end
 
-            context 'a conditional,' do
+            context "a conditional," do
               class IfConditionalOperation < PkOperation
                 context :should_run
 
@@ -98,10 +98,10 @@ module Pathway
               let(:operation) { IfConditionalOperation.new(should_run: should_run) }
               let(:params) { { pk: 77 } }
 
-              context 'when the condition is true' do
+              context "when the condition is true" do
                 let(:should_run) { true }
 
-                it 'executes the transaction' do
+                it "executes the transaction" do
                   expect(DB).to receive(:transaction).once.and_call_original
                   expect(MyModel).to receive(:first).with(params).and_return(model)
 
@@ -109,10 +109,10 @@ module Pathway
                 end
               end
 
-              context 'when the condition is false' do
+              context "when the condition is false" do
                 let(:should_run) { false }
 
-                it 'skips the transaction' do
+                it "skips the transaction" do
                   expect(MyModel).to_not receive(:first)
                   expect(DB).to_not receive(:transaction)
 
@@ -122,7 +122,7 @@ module Pathway
             end
           end
 
-          context 'when providing a step' do
+          context "when providing a step" do
             class FetchStepOperation < MyOperation
               process do
                 transaction :fetch_model
@@ -132,7 +132,7 @@ module Pathway
             let(:operation) { FetchStepOperation.new(mailer: mailer) }
             before { allow(DB).to receive(:transaction).and_call_original }
 
-            it 'returns the result state provided by the inner transaction when successful' do
+            it "returns the result state provided by the inner transaction when successful" do
               allow(MyModel).to receive(:first).with(params).and_return(model)
 
               expect(operation).to succeed_on(params).returning(model)
@@ -144,7 +144,7 @@ module Pathway
               expect(operation).to fail_on(params).with_type(:not_found)
             end
 
-            context 'and conditional' do
+            context "and conditional" do
               class UnlessConditionalOperation < PkOperation
                 context :should_skip
 
@@ -163,10 +163,10 @@ module Pathway
               let(:operation) { UnlessConditionalOperation.new(should_skip: should_skip) }
               let(:params) { { pk: 99 } }
 
-              context 'if the condition is true' do
+              context "if the condition is true" do
                 let(:should_skip) { false }
 
-                it 'executes the transaction' do
+                it "executes the transaction" do
                   expect(DB).to receive(:transaction).once.and_call_original
                   expect(MyModel).to receive(:create).with(params).and_return(model)
 
@@ -174,10 +174,10 @@ module Pathway
                 end
               end
 
-              context 'if the condition is false' do
+              context "if the condition is false" do
                 let(:should_skip) { true }
 
-                it 'skips the transaction' do
+                it "skips the transaction" do
                   expect(DB).to_not receive(:transaction)
                   expect(MyModel).to_not receive(:create)
 
@@ -187,7 +187,7 @@ module Pathway
             end
           end
 
-          context 'when both an :if and :unless conditional' do
+          context "when both an :if and :unless conditional" do
             class InvalidUseOfCondOperation < MyOperation
               process do
                 transaction :perform_db_action, if: :is_good?, unless: :is_bad?
@@ -196,13 +196,13 @@ module Pathway
 
             let(:operation) { InvalidUseOfCondOperation.new }
 
-            it 'raises an error' do
+            it "raises an error" do
               expect { operation.call(params) }.to raise_error.
-                with_message('options :if and :unless are mutually exclusive')
+                with_message("options :if and :unless are mutually exclusive")
             end
           end
 
-          context 'when providing a block and a step' do
+          context "when providing a block and a step" do
             class AmbivalentTransactOperation < MyOperation
               process do
                 transaction :perform_db_action do
@@ -213,13 +213,13 @@ module Pathway
 
             let(:operation) { AmbivalentTransactOperation.new }
 
-            it 'raises an error' do
+            it "raises an error" do
               expect { operation.call(params) }.to raise_error
-                .with_message('must provide either a step or a block but not both')
+                .with_message("must provide either a step or a block but not both")
             end
           end
 
-          context 'when not providing a block nor a step' do
+          context "when not providing a block nor a step" do
             class EmptyTransacOperation < MyOperation
               process do
                 transaction
@@ -228,18 +228,18 @@ module Pathway
 
             let(:operation) { EmptyTransacOperation.new }
 
-            it 'raises an error' do
+            it "raises an error" do
               expect { operation.call(params) }.to raise_error.
-                with_message('must provide either a step or a block but not both')
+                with_message("must provide either a step or a block but not both")
             end
           end
         end
 
-        describe '#after_commit' do
-          context 'when providing a block' do
+        describe "#after_commit" do
+          context "when providing a block" do
             let(:operation) { MailerOperation.new(mailer: mailer) }
 
-            it 'calls after_commit block when transaction is successful' do
+            it "calls after_commit block when transaction is successful" do
               expect(DB).to receive(:transaction).and_call_original
               allow(MyModel).to receive(:first).with(params).and_return(model)
               expect(DB).to receive(:after_commit).and_call_original
@@ -248,7 +248,7 @@ module Pathway
               expect(operation).to succeed_on(params)
             end
 
-            it 'does not call after_commit block when transaction fails' do
+            it "does not call after_commit block when transaction fails" do
               expect(DB).to receive(:transaction).and_call_original
               allow(MyModel).to receive(:first).with(params).and_return(nil)
               expect(DB).to_not receive(:after_commit).and_call_original
@@ -257,10 +257,10 @@ module Pathway
               expect(operation).to fail_on(params)
             end
 
-            context 'and the execution state is changed bellow the after_commit callback' do
+            context "and the execution state is changed bellow the after_commit callback" do
               let(:operation) { ChainedOperation.new(mailer: mailer) }
 
-              it 'ignores any state changes that took place following the after_commit block' do
+              it "ignores any state changes that took place following the after_commit block" do
                 allow(MyModel).to receive(:first).with(params).and_return(model)
                 expect(mailer).to receive(:send_emails).with(model)
 
@@ -269,7 +269,7 @@ module Pathway
             end
           end
 
-          context 'when providing a step' do
+          context "when providing a step" do
             class SendEmailStepOperation < MyOperation
               process do
                 transaction do
@@ -286,7 +286,7 @@ module Pathway
             let(:operation) { SendEmailStepOperation.new(mailer: mailer) }
             before { expect(DB).to receive(:transaction).and_call_original }
 
-            it 'calls after_commit block when transaction is successful' do
+            it "calls after_commit block when transaction is successful" do
               allow(MyModel).to receive(:first).with(params).and_return(model)
               expect(DB).to receive(:after_commit).and_call_original
               expect(mailer).to receive(:send_emails).with(model)
@@ -294,7 +294,7 @@ module Pathway
               expect(operation).to succeed_on(params)
             end
 
-            it 'does not call after_commit block when transaction fails' do
+            it "does not call after_commit block when transaction fails" do
               allow(MyModel).to receive(:first).with(params).and_return(nil)
               expect(DB).to_not receive(:after_commit).and_call_original
               expect(mailer).to_not receive(:send_emails)
@@ -303,8 +303,8 @@ module Pathway
             end
           end
 
-          context 'with conditional execution' do
-            context 'using :if with and a block' do
+          context "with conditional execution" do
+            context "using :if with and a block" do
               class IfConditionalAfterCommitOperation < MyOperation
                 context :should_run
 
@@ -326,14 +326,14 @@ module Pathway
               end
 
               let(:operation) { IfConditionalAfterCommitOperation.new(mailer: mailer, should_run: should_run) }
-              let(:params) { { email: 'asd@fgh.net' } }
+              let(:params) { { email: "asd@fgh.net" } }
 
               before { allow(MyModel).to receive(:first).with(params).and_return(model) }
 
-              context 'when the condition is true' do
+              context "when the condition is true" do
                 let(:should_run) { true }
 
-                it 'executes the after_commit block' do
+                it "executes the after_commit block" do
                   expect(DB).to receive(:after_commit).and_call_original
                   expect(mailer).to receive(:send_emails).with(model)
 
@@ -341,10 +341,10 @@ module Pathway
                 end
               end
 
-              context 'when the condition is false' do
+              context "when the condition is false" do
                 let(:should_run) { false }
 
-                it 'skips the after_commit block' do
+                it "skips the after_commit block" do
                   expect(DB).to_not receive(:after_commit)
                   expect(mailer).to_not receive(:send_emails)
 
@@ -353,7 +353,7 @@ module Pathway
               end
             end
 
-            context 'using :unless and a block' do
+            context "using :unless and a block" do
               class UnlessConditionalAfterCommitOperation < MyOperation
                 context :should_skip
 
@@ -375,14 +375,14 @@ module Pathway
               end
 
               let(:operation) { UnlessConditionalAfterCommitOperation.new(mailer: mailer, should_skip: should_skip) }
-              let(:params) { { email: 'asd@fgh.net' } }
+              let(:params) { { email: "asd@fgh.net" } }
 
               before { allow(MyModel).to receive(:first).with(params).and_return(model) }
 
-              context 'when the condition is false' do
+              context "when the condition is false" do
                 let(:should_skip) { false }
 
-                it 'executes the after_commit block' do
+                it "executes the after_commit block" do
                   expect(DB).to receive(:after_commit).and_call_original
                   expect(mailer).to receive(:send_emails).with(model)
 
@@ -390,10 +390,10 @@ module Pathway
                 end
               end
 
-              context 'when the condition is true' do
+              context "when the condition is true" do
                 let(:should_skip) { true }
 
-                it 'skips the after_commit block' do
+                it "skips the after_commit block" do
                   expect(DB).to_not receive(:after_commit)
                   expect(mailer).to_not receive(:send_emails)
 
@@ -402,7 +402,7 @@ module Pathway
               end
             end
 
-            context 'using :if with step name' do
+            context "using :if with step name" do
               class IfStepConditionalAfterCommitOperation < MyOperation
                 context :should_run
 
@@ -421,13 +421,13 @@ module Pathway
                 def should_run?(state) = state[:should_run]
               end
 
-              before { allow(MyModel).to receive(:first).with(email: 'asd@fgh.net').and_return(model) }
+              before { allow(MyModel).to receive(:first).with(email: "asd@fgh.net").and_return(model) }
               let(:operation) { IfStepConditionalAfterCommitOperation.new(mailer: mailer, should_run: should_run) }
 
-              context 'when the condition is true' do
+              context "when the condition is true" do
                 let(:should_run) { true }
 
-                it 'executes the after_commit step' do
+                it "executes the after_commit step" do
                   expect(DB).to receive(:after_commit).and_call_original
                   expect(mailer).to receive(:send_emails).with(model)
 
@@ -435,10 +435,10 @@ module Pathway
                 end
               end
 
-              context 'when the condition is false' do
+              context "when the condition is false" do
                 let(:should_run) { false }
 
-                it 'skips the after_commit step' do
+                it "skips the after_commit step" do
                   expect(DB).to_not receive(:after_commit)
                   expect(mailer).to_not receive(:send_emails)
 
@@ -447,7 +447,7 @@ module Pathway
               end
             end
 
-            context 'when both :if and :unless are provided' do
+            context "when both :if and :unless are provided" do
               class InvalidConditionalAfterCommitOperation < MyOperation
                 process do
                   transaction do
@@ -458,14 +458,14 @@ module Pathway
 
               let(:operation) { InvalidConditionalAfterCommitOperation.new }
 
-              it 'raises an error' do
+              it "raises an error" do
                 expect { operation.call(params) }.to raise_error
-                  .with_message('options :if and :unless are mutually exclusive')
+                  .with_message("options :if and :unless are mutually exclusive")
               end
             end
           end
 
-          context 'when providing a block and a step' do
+          context "when providing a block and a step" do
             class AmbivalentAfterCommitOperation < MyOperation
               process do
                 transaction do
@@ -478,13 +478,13 @@ module Pathway
 
             let(:operation) { AmbivalentAfterCommitOperation.new }
 
-            it 'raises an error' do
+            it "raises an error" do
               expect { operation.call(params) }.to raise_error
-                .with_message('must provide either a step or a block but not both')
+                .with_message("must provide either a step or a block but not both")
             end
           end
 
-          context 'when not providing a block nor a step' do
+          context "when not providing a block nor a step" do
             class InvalidAfterCommitOperation < MyOperation
               process do
                 transaction do
@@ -495,14 +495,14 @@ module Pathway
 
             let(:operation) { InvalidAfterCommitOperation.new }
 
-            it 'raises an error' do
+            it "raises an error" do
               expect { operation.call(params) }.to raise_error.
-                with_message('must provide either a step or a block but not both')
+                with_message("must provide either a step or a block but not both")
             end
           end
         end
 
-        describe '#after_rollback' do
+        describe "#after_rollback" do
           class LoggerOperation < MyOperation
             context :logger
 
@@ -523,7 +523,7 @@ module Pathway
 
           let(:logger) { double }
 
-          context 'when providing a block' do
+          context "when providing a block" do
             class RollbackWithBlockOperation < LoggerOperation
               process do
                 transaction do
@@ -539,14 +539,14 @@ module Pathway
             let(:operation) { RollbackWithBlockOperation.new(logger: logger) }
             before { expect(DB).to receive(:transaction).and_call_original }
 
-            it 'calls after_rollback block when transaction fails' do
+            it "calls after_rollback block when transaction fails" do
               expect(MyModel).to receive(:first).with(params).and_return(nil)
               expect(logger).to receive(:log)
 
               expect(operation).to fail_on(params)
             end
 
-            it 'does not call after_rollback block when transaction succeeds' do
+            it "does not call after_rollback block when transaction succeeds" do
               expect(MyModel).to receive(:first).with(params).and_return(model)
               expect(logger).to_not receive(:log)
 
@@ -554,7 +554,7 @@ module Pathway
             end
           end
 
-          context 'when providing a step' do
+          context "when providing a step" do
             class RollbackStepOperation < LoggerOperation
               process do
                 transaction do
@@ -567,14 +567,14 @@ module Pathway
             let(:operation) { RollbackStepOperation.new(logger: logger) }
             before { expect(DB).to receive(:transaction).and_call_original }
 
-            it 'calls after_rollback step when transaction fails' do
+            it "calls after_rollback step when transaction fails" do
               expect(MyModel).to receive(:first).with(params).and_return(nil)
               expect(logger).to receive(:log)
 
               expect(operation).to fail_on(params)
             end
 
-            it 'does not call after_rollback step when transaction succeeds' do
+            it "does not call after_rollback step when transaction succeeds" do
               expect(MyModel).to receive(:first).with(params).and_return(model)
               expect(logger).to_not receive(:log)
 
@@ -582,8 +582,8 @@ module Pathway
             end
           end
 
-          context 'with conditional execution' do
-            context 'using :if with a block' do
+          context "with conditional execution" do
+            context "using :if with a block" do
               class IfConditionalAfterRollbackOperation < LoggerOperation
                 context :should_run
 
@@ -601,24 +601,24 @@ module Pathway
               end
 
               let(:operation) { IfConditionalAfterRollbackOperation.new(logger: logger, should_run: should_run) }
-              let(:params) { { email: 'asd@fgh.net' } }
+              let(:params) { { email: "asd@fgh.net" } }
 
               before { allow(MyModel).to receive(:first).with(params).and_return(nil) }
 
-              context 'when the condition is true' do
+              context "when the condition is true" do
                 let(:should_run) { true }
 
-                it 'executes the after_rollback block' do
+                it "executes the after_rollback block" do
                   expect(logger).to receive(:log)
 
                   expect(operation).to fail_on(params)
                 end
               end
 
-              context 'when the condition is false' do
+              context "when the condition is false" do
                 let(:should_run) { false }
 
-                it 'skips the after_rollback block' do
+                it "skips the after_rollback block" do
                   expect(DB).to_not receive(:after_rollback)
                   expect(logger).to_not receive(:log)
 
@@ -627,7 +627,7 @@ module Pathway
               end
             end
 
-            context 'using :unless with a block' do
+            context "using :unless with a block" do
               class UnlessConditionalAfterRollbackOperation < LoggerOperation
                 context :should_skip
 
@@ -645,24 +645,24 @@ module Pathway
               end
 
               let(:operation) { UnlessConditionalAfterRollbackOperation.new(logger: logger, should_skip: should_skip) }
-              let(:params) { { email: 'asd@fgh.net' } }
+              let(:params) { { email: "asd@fgh.net" } }
 
               before { allow(MyModel).to receive(:first).with(params).and_return(nil) }
 
-              context 'when the condition is false' do
+              context "when the condition is false" do
                 let(:should_skip) { false }
 
-                it 'executes the after_rollback block' do
+                it "executes the after_rollback block" do
                   expect(logger).to receive(:log)
 
                   expect(operation).to fail_on(params)
                 end
               end
 
-              context 'when the condition is true' do
+              context "when the condition is true" do
                 let(:should_skip) { true }
 
-                it 'skips the after_rollback block' do
+                it "skips the after_rollback block" do
                   expect(DB).to_not receive(:after_rollback)
                   expect(logger).to_not receive(:log)
 
@@ -671,7 +671,7 @@ module Pathway
               end
             end
 
-            context 'using :if with step name' do
+            context "using :if with step name" do
               class IfStepConditionalAfterRollbackOperation < LoggerOperation
                 context :should_run
 
@@ -686,23 +686,23 @@ module Pathway
                 def should_run?(state) = state[:should_run]
               end
 
-              before { allow(MyModel).to receive(:first).with(email: 'asd@fgh.net').and_return(nil) }
+              before { allow(MyModel).to receive(:first).with(email: "asd@fgh.net").and_return(nil) }
               let(:operation) { IfStepConditionalAfterRollbackOperation.new(logger: logger, should_run: should_run) }
 
-              context 'when the condition is true' do
+              context "when the condition is true" do
                 let(:should_run) { true }
 
-                it 'executes the after_rollback step' do
+                it "executes the after_rollback step" do
                   expect(logger).to receive(:log)
 
                   expect(operation).to fail_on(params)
                 end
               end
 
-              context 'when the condition is false' do
+              context "when the condition is false" do
                 let(:should_run) { false }
 
-                it 'skips the after_rollback step' do
+                it "skips the after_rollback step" do
                   expect(DB).to_not receive(:after_rollback)
                   expect(logger).to_not receive(:log)
 
@@ -711,7 +711,7 @@ module Pathway
               end
             end
 
-            context 'when both :if and :unless are provided' do
+            context "when both :if and :unless are provided" do
               class InvalidConditionalAfterRollbackOperation < LoggerOperation
                 process do
                   transaction do
@@ -722,14 +722,14 @@ module Pathway
 
               let(:operation) { InvalidConditionalAfterRollbackOperation.new(logger: logger) }
 
-              it 'raises an error' do
+              it "raises an error" do
                 expect { operation.call(params) }.to raise_error
-                  .with_message('options :if and :unless are mutually exclusive')
+                  .with_message("options :if and :unless are mutually exclusive")
               end
             end
           end
 
-          context 'when providing a block and a step' do
+          context "when providing a block and a step" do
             class AmbivalentAfterRollbackOperation < MyOperation
               process do
                 transaction do
@@ -742,13 +742,13 @@ module Pathway
 
             let(:operation) { AmbivalentAfterRollbackOperation.new }
 
-            it 'raises an error' do
+            it "raises an error" do
               expect { operation.call(params) }.to raise_error
-                .with_message('must provide either a step or a block but not both')
+                .with_message("must provide either a step or a block but not both")
             end
           end
 
-          context 'when not providing a block nor a step' do
+          context "when not providing a block nor a step" do
             class InvalidAfterRollbackOperation < MyOperation
               process do
                 transaction do
@@ -759,13 +759,13 @@ module Pathway
 
             let(:operation) { InvalidAfterRollbackOperation.new }
 
-            it 'raises an error' do
+            it "raises an error" do
               expect { operation.call(params) }.to raise_error
-                .with_message('must provide either a step or a block but not both')
+                .with_message("must provide either a step or a block but not both")
             end
           end
 
-          context 'when nesting operations with rollback callbacks' do
+          context "when nesting operations with rollback callbacks" do
             class InnerFailingOperation < MyOperation
               context :notifier
 
@@ -818,7 +818,7 @@ module Pathway
             let(:notifier) { spy }
             let(:operation) { OuterOperationWithRollback.new(notifier: notifier) }
 
-            it 'executes rollback callbacks in the correct order when inner operation fails' do
+            it "executes rollback callbacks in the correct order when inner operation fails" do
               expect(notifier).to receive(:inner_fail_step)
               expect(notifier).to receive(:inner_rollback)
               expect(notifier).to receive(:after_inner_call_step)
@@ -838,7 +838,7 @@ module Pathway
 
       let(:operation) { MyOperation.new }
 
-      describe '.model' do
+      describe ".model" do
         it "sets the 'result_key' using the model class name" do
           expect(operation.result_key).to eq(:my_model)
         end
@@ -847,13 +847,13 @@ module Pathway
           expect(operation.model_class).to eq(MyModel)
         end
 
-        context 'when a :search_field option is specified' do
+        context "when a :search_field option is specified" do
           it "sets the 'search_field' with the provided value" do
             expect(operation.search_field).to eq(:email)
           end
         end
 
-        context 'when no :search_field option is specified' do
+        context "when no :search_field option is specified" do
           let(:operation) { PkOperation.new }
 
           it "sets the 'search_field' from the model's pk" do
@@ -861,7 +861,7 @@ module Pathway
           end
         end
 
-        context 'when the operation is inherited' do
+        context "when the operation is inherited" do
           let(:opr_class) { MyOperation }
           subject(:opr_subclass) { Class.new(opr_class) }
 
@@ -874,16 +874,16 @@ module Pathway
         end
       end
 
-      describe '#db' do
-        it 'returns the current db form the model class'  do
+      describe "#db" do
+        it "returns the current db form the model class"  do
           expect(operation.db).to eq(DB)
         end
       end
 
-      let(:key)    { 'some@email.com' }
+      let(:key)    { "some@email.com" }
       let(:params) { { foo: 3, bar: 4} }
 
-      describe '#find_model_with' do
+      describe "#find_model_with" do
         it "queries the db through the 'model_class'" do
           expect(MyModel).to receive(:first).with(email: key)
 
@@ -891,8 +891,8 @@ module Pathway
         end
       end
 
-      describe '#fetch_model' do
-        let(:other_model) { double(name: 'OtherModel') }
+      describe "#fetch_model" do
+        let(:other_model) { double(name: "OtherModel") }
         let(:dataset) { double(model: other_model) }
         let(:object) { double }
 
@@ -904,10 +904,10 @@ module Pathway
 
         context "when proving and external repository through 'from:'" do
           it "fetches an instance through 'model_class' and sets result key using an overrided search column, input key and 'from' model class" do
-            expect(other_model).to receive(:first).with(pk: 'foo').and_return(object)
+            expect(other_model).to receive(:first).with(pk: "foo").and_return(object)
             expect(MyModel).to_not receive(:first)
 
-            state  = { input: { myid: 'foo' } }
+            state  = { input: { myid: "foo" } }
             result = operation
                        .fetch_model(state, from: other_model, using: :myid, search_by: :pk)
                        .value[:my_model]
@@ -916,10 +916,10 @@ module Pathway
           end
 
           it "fetches an instance through 'model_class' and sets result key using an overrided search column, input key and 'from' dataset" do
-            expect(dataset).to receive(:first).with(pk: 'foo').and_return(object)
+            expect(dataset).to receive(:first).with(pk: "foo").and_return(object)
             expect(MyModel).to_not receive(:first)
 
-            state  = { input: { myid: 'foo' } }
+            state  = { input: { myid: "foo" } }
             result = operation
                        .fetch_model(state, from: dataset, using: :myid, search_by: :pk)
                        .value[:my_model]
@@ -929,9 +929,9 @@ module Pathway
         end
 
         it "fetches an instance through 'model_class' and sets result key using an overrided search column and input key with only :search_by is provided" do
-          expect(MyModel).to receive(:first).with(name: 'foobar').and_return(object)
+          expect(MyModel).to receive(:first).with(name: "foobar").and_return(object)
 
-          state  = { input: { email: 'other@email.com', name: 'foobar' } }
+          state  = { input: { email: "other@email.com", name: "foobar" } }
           result = operation
                      .fetch_model(state, search_by: :name)
                      .value[:my_model]
@@ -940,9 +940,9 @@ module Pathway
         end
 
         it "fetches an instance through 'model_class' and sets result key using an overrided input key with but not search column when only :using is provided" do
-          expect(MyModel).to receive(:first).with(email: 'foobar@mail.com').and_return(object)
+          expect(MyModel).to receive(:first).with(email: "foobar@mail.com").and_return(object)
 
-          state  = { input: { email: 'other@email.com', first_email: 'foobar@mail.com' } }
+          state  = { input: { email: "other@email.com", first_email: "foobar@mail.com" } }
           result = operation
                      .fetch_model(state, using: :first_email)
                      .value[:my_model]
@@ -950,7 +950,7 @@ module Pathway
           expect(result).to eq(object)
         end
 
-        it 'returns an error when no instance is found', :aggregate_failures do
+        it "returns an error when no instance is found", :aggregate_failures do
           expect(MyModel).to receive(:first).with(email: key).and_return(nil)
 
           result = operation.fetch_model({input: {email: key}})
@@ -958,10 +958,10 @@ module Pathway
           expect(result).to be_an(Result::Failure)
           expect(result.error).to be_an(Pathway::Error)
           expect(result.error.type).to eq(:not_found)
-          expect(result.error.message).to eq('My model not found')
+          expect(result.error.message).to eq("My model not found")
         end
 
-        it 'returns an error without hitting the database when search key is nil', :aggregate_failures do
+        it "returns an error without hitting the database when search key is nil", :aggregate_failures do
           expect(MyModel).to_not receive(:first)
 
           result = operation.fetch_model({input: {email: nil}})
@@ -969,42 +969,42 @@ module Pathway
           expect(result).to be_an(Result::Failure)
           expect(result.error).to be_an(Pathway::Error)
           expect(result.error.type).to eq(:not_found)
-          expect(result.error.message).to eq('My model not found')
+          expect(result.error.message).to eq("My model not found")
         end
       end
 
-      describe '#call' do
+      describe "#call" do
         let(:operation)     { MyOperation.new(ctx) }
-        let(:result)        { operation.call(email: 'an@email.com') }
+        let(:result)        { operation.call(email: "an@email.com") }
         let(:fetched_model) { MyModel.new }
 
-        context 'when the model is not present at the context' do
+        context "when the model is not present at the context" do
           let(:ctx) { {} }
 
           it "doesn't include the model's key on the operation's context" do
             expect(operation.context).to_not include(:my_model)
           end
-          it 'fetchs the model from the DB' do
-            expect(MyModel).to receive(:first).with(email: 'an@email.com').and_return(fetched_model)
+          it "fetchs the model from the DB" do
+            expect(MyModel).to receive(:first).with(email: "an@email.com").and_return(fetched_model)
 
             expect(result.value).to be(fetched_model)
           end
         end
 
-        context 'when the model is already present in the context' do
+        context "when the model is already present in the context" do
           let(:existing_model) { MyModel.new }
           let(:ctx)            { { my_model: existing_model } }
 
           it "includes the model's key on the operation's context" do
             expect(operation.context).to include(my_model: existing_model)
           end
-          it 'uses the model from the context and avoid querying the DB' do
+          it "uses the model from the context and avoid querying the DB" do
             expect(MyModel).to_not receive(:first)
 
             expect(result.value).to be(existing_model)
           end
 
-          context 'but :fetch_model step specifies overwrite: true' do
+          context "but :fetch_model step specifies overwrite: true" do
             class OwOperation < MyOperation
               process do
                 step :fetch_model, overwrite: true
@@ -1013,8 +1013,8 @@ module Pathway
 
             let(:operation) { OwOperation.new(ctx) }
 
-            it 'fetches the model from the DB anyway' do
-              expect(MyModel).to receive(:first).with(email: 'an@email.com').and_return(fetched_model)
+            it "fetches the model from the DB anyway" do
+              expect(MyModel).to receive(:first).with(email: "an@email.com").and_return(fetched_model)
 
               expect(operation.context).to include(my_model: existing_model)
               expect(operation.my_model).to be(existing_model)

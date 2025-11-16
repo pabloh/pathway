@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require "spec_helper"
 
 module Pathway
   module Plugins
-    describe 'Responder' do
+    describe "Responder" do
       class RespOperation < Operation
         plugin :responder
 
@@ -16,7 +16,7 @@ module Pathway
       end
 
       let(:input)   { {} }
-      let(:context) { { with: passed_result} }
+      let(:context) { { with: passed_result } }
 
       describe ".call" do
         context "when no block is given" do
@@ -34,7 +34,7 @@ module Pathway
             let(:result) do
               RespOperation.call(context, input) do
                 success { |value| "Returning: " + value }
-                failure { |error| error}
+                failure { |error| error }
               end
             end
 
@@ -75,7 +75,7 @@ module Pathway
 
             context "and the result is an error of a specified type" do
               let(:passed_result) do
-                Result.failure(Error.new(type: :validation, details: ['name missing', 'email missing']))
+                Result.failure(Error.new(type: :validation, details: ["name missing", "email missing"]))
               end
 
               it "executes the right failure type block" do

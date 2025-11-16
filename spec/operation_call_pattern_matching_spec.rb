@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require "spec_helper"
 
 module Pathway
   class Result
     module Mixin
-      describe 'Operation call with pattern matching' do
+      describe "Operation call with pattern matching" do
         class RespOperation < Operation
           context :with
 
@@ -88,7 +88,7 @@ module Pathway
 
               context "and the pattern is Failure with :type and :details specified" do
                 let(:passed_result) do
-                  Result.failure(Error.new(type: :validation, details: ['name missing', 'email missing']))
+                  Result.failure(Error.new(type: :validation, details: ["name missing", "email missing"]))
                 end
 
                 it "returns the result according to :type" do
@@ -138,7 +138,7 @@ module Pathway
 
               context "and the pattern is Failure with :type and :details specified" do
                 let(:passed_result) do
-                  Result.failure(Error.new(type: :validation, details: ['name missing', 'email missing']))
+                  Result.failure(Error.new(type: :validation, details: ["name missing", "email missing"]))
                 end
 
                 it "returns the result according to :type" do

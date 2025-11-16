@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require "spec_helper"
 
 module Pathway
   module Plugins
@@ -84,7 +84,7 @@ module Pathway
         allow(notifier).to receive(:call)
       end
 
-      let(:valid_input) { { foo: 'FOO' } }
+      let(:valid_input) { { foo: "FOO" } }
 
       describe ".process" do
         it "defines a 'call' method wich saves operation argument into the :input key" do

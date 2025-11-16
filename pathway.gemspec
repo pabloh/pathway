@@ -37,7 +37,9 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "sequel", "~> 5.0"
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "rspec", "~> 3.11"
-  spec.add_development_dependency "simplecov-lcov", '~> 0.8.0'
+  spec.add_development_dependency "simplecov-lcov", "~> 0.8.0"
+  spec.add_development_dependency "rubocop", "~> 1.71.0"
+  spec.add_development_dependency "rubocop-performance"
   spec.add_development_dependency "simplecov"
   spec.add_development_dependency "pry"
   spec.add_development_dependency "reline"
