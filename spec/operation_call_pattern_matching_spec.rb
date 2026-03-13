@@ -5,7 +5,7 @@ require 'spec_helper'
 module Pathway
   class Result
     module Mixin
-      describe 'Operation call with pattern matching' do
+      RSpec.describe 'Operation call with pattern matching' do
         class RespOperation < Operation
           context :with
 

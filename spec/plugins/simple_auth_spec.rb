@@ -4,7 +4,7 @@ require 'spec_helper'
 
 module Pathway
   module Plugins
-    describe 'SimpleAuth' do
+    RSpec.describe 'SimpleAuth' do
       class AuthOperation < Operation
         plugin :simple_auth
 

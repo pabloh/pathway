@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 module Pathway
-  describe Operation do
+  RSpec.describe Operation do
     module SimplePlugin
       module InstanceMethods
         attr :foo

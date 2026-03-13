@@ -4,7 +4,7 @@ require 'spec_helper'
 
 module Pathway
   module Plugins
-    describe 'DryValidation' do
+    RSpec.describe 'DryValidation' do
       class SimpleOperation < Operation
         plugin :dry_validation
 

@@ -4,7 +4,7 @@ require 'spec_helper'
 
 module Pathway
   module Plugins
-    describe Base do
+    RSpec.describe Base do
 
       class OperationWithSteps < Operation
         context :validator, :back_end, :notifier, :cond

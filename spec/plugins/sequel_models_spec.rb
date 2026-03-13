@@ -4,7 +4,7 @@ require 'spec_helper'
 
 module Pathway
   module Plugins
-    describe 'SequelModels' do
+    RSpec.describe 'SequelModels' do
       DB = Sequel.mock
       MyModel = Class.new(Sequel::Model(DB[:foo])) { set_primary_key :pk }
 

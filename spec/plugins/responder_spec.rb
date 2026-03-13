@@ -4,7 +4,7 @@ require 'spec_helper'
 
 module Pathway
   module Plugins
-    describe 'Responder' do
+    RSpec.describe 'Responder' do
       class RespOperation < Operation
         plugin :responder
 

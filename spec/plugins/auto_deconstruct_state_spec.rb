@@ -4,7 +4,7 @@ require 'spec_helper'
 
 module Pathway
   module Plugins
-    describe 'AutoDeconstructState' do
+    RSpec.describe 'AutoDeconstructState' do
       class KwargsOperation < Operation
         plugin :auto_deconstruct_state
 

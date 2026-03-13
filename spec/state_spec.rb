@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 module Pathway
-  describe State do
+  RSpec.describe State do
     class SimpleOp < Operation
       context :foo, bar: 10
       result_at :the_result

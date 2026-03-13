@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 module Pathway
-  describe Result do
+  RSpec.describe Result do
 
     describe ".success" do
       let(:result) { Result.success("VALUE") }
