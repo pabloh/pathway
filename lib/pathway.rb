@@ -147,6 +147,8 @@ module Pathway
       end
 
       module DSLMethods
+        module CallStep; end
+
         def initialize(state, operation)
           @result, @operation = wrap(state), operation
         end
@@ -196,20 +198,21 @@ module Pathway
 
         def wrap(obj) = Result.result(obj)
 
-        def _callable(callable, &bl)
+        def _callable(callable, &block)
           if block_given?
             raise ArgumentError, "You must either pass a block or a callable but not both" unless callable.is_a?(Symbol)
 
-            warn "The operation already responds to a message of the same name" if @operation.responds_to?(callable)
-
-            ->(*args, **kwargs) { @operation.instance_exec(*args, **kwargs, &bl) }
+            warn "The operation already responds to a message of the same name" if @operation.respond_to?(callable)
+            _callable(block)
           else
             case callable
+            when CallStep
+              callable
             when Proc
-              ->(*args, **kwargs) { @operation.instance_exec(*args, **kwargs, &callable) }
+              ->(*args, **kwargs) { @operation.instance_exec(*args, **kwargs, &callable) }.extend(CallStep)
             when Symbol
-              ->(*args, **kwargs) { @operation.send(callable, *args, **kwargs) }
-            else
+              ->(*args, **kwargs) { @operation.send(callable, *args, **kwargs) }.extend(CallStep)
+            else # rubocop:disable Lint/DuplicateBranch
               callable
             end
           end
