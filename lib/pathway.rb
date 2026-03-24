@@ -1,16 +1,16 @@
 # frozen_string_literal: true
 
-require 'forwardable'
-require 'dry/inflector'
-require 'contextualizer'
-require 'pathway/version'
-require 'pathway/result'
+require "forwardable"
+require "dry/inflector"
+require "contextualizer"
+require "pathway/version"
+require "pathway/result"
 
 module Pathway
   Inflector = Dry::Inflector.new
   class Operation
     class << self
-      def plugin(name,...)
+      def plugin(name, ...)
         require "pathway/plugins/#{Inflector.underscore(name)}" if name.is_a?(Symbol)
 
         plugin = name.is_a?(Module) ? name : Plugins.const_get(Inflector.camelize(name))
@@ -19,7 +19,7 @@ module Pathway
         self.include plugin::InstanceMethods if plugin.const_defined? :InstanceMethods
         self::DSL.include plugin::DSLMethods if plugin.const_defined? :DSLMethods
 
-        plugin.apply(self,...) if plugin.respond_to?(:apply)
+        plugin.apply(self, ...) if plugin.respond_to?(:apply)
       end
 
       def inherited(subclass)
@@ -34,6 +34,7 @@ module Pathway
 
   class Error
     attr_reader :type, :message, :details
+
     singleton_class.send :attr_accessor, :default_messages
 
     @default_messages = {}
@@ -56,6 +57,7 @@ module Pathway
 
   class State
     extend Forwardable
+
     delegate %i([] []= fetch store include? values_at deconstruct_keys) => :@hash
 
     def initialize(operation, values = {})
@@ -72,16 +74,16 @@ module Pathway
     def to_hash = @hash
 
     def use(&bl)
-      raise ArgumentError, 'a block must be provided' if !block_given?
-      if bl.parameters in [*, [:rest|:keyrest,], *]
-        raise ArgumentError, 'rest arguments are not supported'
+      raise ArgumentError, "a block must be provided" unless block_given?
+      if bl.parameters in [*, [:rest | :keyrest,], *]
+        raise ArgumentError, "rest arguments are not supported"
       end
 
-      keys = bl.parameters.select { _1 in :key|:keyreq, }.map(&:last)
-      names = bl.parameters.select { _1 in :req|:opt, }.map(&:last)
+      keys = bl.parameters.select { _1 in :key | :keyreq, }.map(&:last)
+      names = bl.parameters.select { _1 in :req | :opt, }.map(&:last)
 
       if keys.any? && names.any?
-        raise ArgumentError, 'cannot mix positional and keyword arguments'
+        raise ArgumentError, "cannot mix positional and keyword arguments"
       elsif keys.any?
         bl.call(**to_hash.slice(*keys))
       else
@@ -104,12 +106,12 @@ module Pathway
         def process(&steps)
           define_method(:call) do |input|
             _dsl_for(input:)
-               .run(&steps)
-               .then(&:result)
+              .run(&steps)
+              .then(&:result)
           end
         end
 
-        def call(ctx,...) = new(ctx).call(...)
+        def call(ctx, ...) = new(ctx).call(...)
 
         def inherited(subclass)
           super
@@ -120,12 +122,12 @@ module Pathway
       module InstanceMethods
         extend Forwardable
 
-        delegate :result_key => 'self.class'
+        delegate result_key: "self.class"
         delegate %i[result success failure] => Result
 
         alias_method :wrap, :result
 
-        def call(*) = raise 'must implement at subclass'
+        def call(*) = raise "must implement at subclass"
 
         def error(type, message: nil, details: nil)
           failure(Error.new(type:, message:, details:))
@@ -150,20 +152,20 @@ module Pathway
           @result, @operation = wrap(state), operation
         end
 
-        def run(&steps)
-          instance_eval(&steps)
+        def run(&)
+          instance_eval(&)
           @result
         end
 
         # Execute step and preserve the former state
-        def step(callable,...)
+        def step(callable, ...)
           #:nocov:
           if block_given?
             warn "[DEPRECATION] Passing a block to the step method using `DSLMethods#step` is deprecated"
           end
           #:nocov:
           bl = _callable(callable)
-          @result = @result.tee { |state| bl.call(state,...) }
+          @result = @result.tee { |state| bl.call(state, ...) }
         end
 
         # Execute step and modify the former state setting the key
@@ -182,12 +184,12 @@ module Pathway
         end
 
         # Execute step and replace the current state completely
-        def map(callable,...)
+        def map(callable, ...)
           #:nocov:
           warn "[DEPRECATION] `Pathway::DSLMethods#map` has been deprecated, use `step` instead"
           #:nocov:
           bl = _callable(callable)
-          @result = @result.then { |state| bl.call(state,...) }
+          @result = @result.then { |state| bl.call(state, ...) }
         end
 
         def around(execution_strategy, &steps)
@@ -198,13 +200,13 @@ module Pathway
           end
         end
 
-        def if_true(cond, &steps)
+        def if_true(cond, &)
           cond = _callable(cond)
-          around(->(runner, state) { runner.call if cond.call(state) }, &steps)
+          around(->(runner, state) { runner.call if cond.call(state) }, &)
         end
 
-        def if_false(cond, &steps)
-          if_true(_callable(cond) >> :!.to_proc, &steps)
+        def if_false(cond, &)
+          if_true(_callable(cond) >> :!.to_proc, &)
         end
 
         alias_method :sequence, :around

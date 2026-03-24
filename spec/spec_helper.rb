@@ -1,36 +1,36 @@
 # frozen_string_literal: true
 
-require 'bundler/setup'
+require "bundler/setup"
 
-if ENV['CI']
-  require 'simplecov'
-  require 'simplecov-lcov'
+if ENV["CI"]
+  require "simplecov"
+  require "simplecov-lcov"
 
   SimpleCov.start do
     SimpleCov::Formatter::LcovFormatter.config do |c|
       c.report_with_single_file = true
-      c.single_report_path = 'coverage/lcov.info'
+      c.single_report_path = "coverage/lcov.info"
     end
 
     formatter SimpleCov::Formatter::LcovFormatter
-    add_filter '/spec/'
-    add_filter '/lib/pathway/rspec'
+    add_filter "/spec/"
+    add_filter "/lib/pathway/rspec"
   end
 end
 
-require 'pathway'
-require 'pathway/rspec'
-require 'sequel'
-require 'pry'
-require 'pry-byebug'
+require "pathway"
+require "pathway/rspec"
+require "sequel"
+require "pry"
+require "pry-byebug"
 
 # Load testing support files
-Dir[__dir__ + '/support/**/*.rb'].each { |support| require support }
+Dir[__dir__ + "/support/**/*.rb"].each { |support| require support }
 
 RSpec::Matchers.define_negated_matcher :exclude, :include
 
 RSpec.configure do |config|
-  config.example_status_persistence_file_path = '.rspec_status'
+  config.example_status_persistence_file_path = ".rspec_status"
 
   config.color = true
   config.tty = true

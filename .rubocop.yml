@@ -1,0 +1,134 @@
+# The behavior of RuboCop can be controlled via the .rubocop.yml
+# configuration file. It makes it possible to enable/disable
+# certain cops (checks) and to alter their behavior if they accept
+# any parameters. The file can be placed either in your home
+# directory or in some project directory.
+#
+# RuboCop will start looking for the configuration file in the directory
+# where the inspected file is and continue its way up to the root directory.
+#
+# See https://docs.rubocop.org/rubocop/configuration
+
+plugins: rubocop-performance
+
+AllCops:
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - 'bin/*'
+
+Style/Alias:
+  EnforcedStyle: prefer_alias_method
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/HashSyntax:
+  Exclude:
+    - Rakefile
+
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*.rb'
+    - 'lib/pathway/rspec/matchers/*.rb'
+    - 'pathway.gemspec'
+
+Layout/EmptyLinesAroundBlockBody:
+  Exclude:
+    - 'spec/**/*.rb'
+
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented_relative_to_receiver
+
+Naming/MethodParameterName:
+  MinNameLength: 2
+
+Lint/MissingSuper:
+  AllowedParentClasses: [Result]
+
+Style/AccessModifierDeclarations:
+  AllowModifiersOnAliasMethod: true
+
+Gemspec/DevelopmentDependencies:
+  Enabled: true
+  EnforcedStyle: gemspec
+
+Layout/HashAlignment:
+  EnforcedHashRocketStyle: table
+
+Metrics/CyclomaticComplexity:
+  Max: 8
+
+Metrics/AbcSize:
+  Max: 23
+
+Metrics/MethodLength:
+  Max: 15
+
+Metrics/PerceivedComplexity:
+  Max: 10
+
+# Permanently Disabled
+Style/GuardClause:
+  Enabled: false
+
+Style/LambdaCall:
+  Enabled: false
+
+Style/StringConcatenation:
+  Enabled: false
+
+Style/Lambda:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+
+Layout/EmptyLinesAroundAccessModifier:
+  Enabled: false
+
+Gemspec/OrderedDependencies:
+  Enabled: false
+
+Style/ParallelAssignment:
+  Enabled: False
+
+Style/TrailingCommaInHashLiteral:
+  Enabled: False
+
+Style/RedundantSelf:
+  Enabled: False
+
+Style/IfUnlessModifier:
+  Enabled: False
+
+Lint/EmptyClass:
+  Enabled: False
+
+# TODO: Temporally Disabled
+Style/SafeNavigation:
+  Enabled: False
+
+Layout/LeadingCommentSpace:
+  Enabled: False
+
+Style/NumericLiterals:
+  Enabled: False
+
+Style/CaseEquality:
+  Enabled: False
+
+Performance/RedundantBlockCall:
+  Enabled: False
+
+Lint/ConstantDefinitionInBlock:
+  Enabled: false
+
+Layout/LineLength:
+  Enabled: false
+
+Layout/SpaceInsideHashLiteralBraces:
+  Enabled: false
+
+Metrics/ModuleLength:
+  Enabled: false

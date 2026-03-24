@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require "spec_helper"
 
 module Pathway
   module Plugins
@@ -15,18 +15,18 @@ module Pathway
           map  :add_misc
           set  :get_value
           set  :get_aux_value, to: :aux_value
-          around(-> run, st { run.call if cond.call(st) }) do
-            set ->_ { 99 }, to: :aux_value
-            set ->_ { :UPDATED }
+          around(->(run, st) { run.call if cond.call(st) }) do
+            set ->(_) { 99 }, to: :aux_value
+            set ->(_) { :UPDATED }
           end
           around(:if_zero) do
-            set ->_ { :ZERO }
+            set ->(_) { :ZERO }
           end
           if_true(:negative?) do
-            set ->_ { :NEGATIVE }
+            set ->(_) { :NEGATIVE }
           end
           if_false(:small?) do
-            set ->_ { :BIG }
+            set ->(_) { :BIG }
           end
           step :notify
         end
@@ -84,7 +84,7 @@ module Pathway
         allow(notifier).to receive(:call)
       end
 
-      let(:valid_input) { { foo: 'FOO' } }
+      let(:valid_input) { { foo: "FOO" } }
 
       describe ".process" do
         it "defines a 'call' method wich saves operation argument into the :input key" do
@@ -166,7 +166,6 @@ module Pathway
         end
       end
 
-
       let(:result) { operation.call(valid_input) }
 
       describe "#step" do
@@ -212,7 +211,7 @@ module Pathway
         end
 
         context "when running callbacks after the operation has failled" do
-          let(:logger) { double}
+          let(:logger) { double }
           let(:operation) { OperationWithCallbacks.new(logger: logger) }
           let(:operation_class) do
             Class.new(Operation) do
@@ -221,8 +220,8 @@ module Pathway
               process do
                 around(:cleanup_callback_context) do
                   around(:put_steps_in_callback) do
-                    set  -> _ { :SHOULD_NOT_BE_SET }
-                    step -> _ { logger.log("calling back from callback") }
+                    set  ->(_) { :SHOULD_NOT_BE_SET }
+                    step ->(_) { logger.log("calling back from callback") }
                   end
                   step :failing_step
                 end

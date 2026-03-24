@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'pathway/rspec/matchers/list_helpers'
+require "pathway/rspec/matchers/list_helpers"
 
 RSpec::Matchers.define :fail_on do |input|
   match do |operation|
@@ -10,9 +10,10 @@ RSpec::Matchers.define :fail_on do |input|
   end
 
   match_when_negated do |operation|
-    raise NotImplementedError, '`expect().not_to fail_on(input).with_type()` is not supported.' if @type
-    raise NotImplementedError, '`expect().not_to fail_on(input).with_message()` is not supported.' if @message
-    raise NotImplementedError, '`expect().not_to fail_on(input).with_details()` is not supported.' if @details
+    raise NotImplementedError, "`expect().not_to fail_on(input).with_type()` is not supported." if @type
+    raise NotImplementedError, "`expect().not_to fail_on(input).with_message()` is not supported." if @message
+    raise NotImplementedError, "`expect().not_to fail_on(input).with_details()` is not supported." if @details
+
     @operation, @input = operation, input
 
     !failure?
@@ -40,20 +41,20 @@ RSpec::Matchers.define :fail_on do |input|
   alias_method :and_details, :details
 
   description do
-    'fail' + (@type ? " with :#@type error" : '')
+    "fail" + (@type ? " with :#{@type} error" : "")
   end
 
   failure_message do
-    if !failure?
-      "Expected operation to fail but it didn't"
+    if failure?
+      "Expected failed operation to " +
+        as_sentence(failure_descriptions, connector: "; ", last_connector: "; and ")
     else
-      'Expected failed operation to ' +
-        as_sentence(failure_descriptions, connector: '; ', last_connector: '; and ')
+      "Expected operation to fail but it didn't"
     end
   end
 
   failure_message_when_negated do
-    'Did not expected operation to fail but it did'
+    "Did not expected operation to fail but it did"
   end
 
   def failure?
@@ -85,7 +86,7 @@ RSpec::Matchers.define :fail_on do |input|
   end
 
   def type_failure_description
-    type_matches? ? nil : "have type :#@type but instead was :#{error.type}"
+    type_matches? ? nil : "have type :#{@type} but instead was :#{error.type}"
   end
 
   def message_failure_description
