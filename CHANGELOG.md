@@ -1,3 +1,7 @@
+## [1.3.0] - 2026-04-01
+### Changed
+- Removed support for `Ruby` versions older than 3.3
+
 ## [1.2.0] - 2025-11-16
 ### Deprecated
 - Deprecate passing a block to the step method using `DSLMethods#step`
