@@ -1,13 +1,15 @@
-## [1.3.0] - 2026-04-01
+## [1.3.0] - 2026-03-25
 ### Changed
 - Removed support for `Ruby` versions older than 3.3
 ### Removed
+- Remove support for passing a block to the step method through `DSLMethods#step`
+- Remove support for passing a block to the step method through `DSLMethods#set`
 - Remove support for `DSLMethods#map`
 
 ## [1.2.0] - 2025-11-16
 ### Deprecated
-- Deprecate passing a block to the step method using `DSLMethods#step`
-- Deprecate passing a block to the step method using `DSLMethods#set`
+- Deprecate passing a block to the step method through `DSLMethods#step`
+- Deprecate passing a block to the step method through `DSLMethods#set`
 - Deprecate `DSLMethods#map`
 ### Changed
 - Removed deprecated `:auto_wire_options` option from `:dry_validation` plugin
