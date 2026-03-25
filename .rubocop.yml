@@ -18,6 +18,7 @@ AllCops:
   SuggestExtensions: false
   Exclude:
     - 'bin/*'
+    - 'vendor/**/*'
 
 Style/Alias:
   EnforcedStyle: prefer_alias_method
