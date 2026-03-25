@@ -58,7 +58,7 @@ module Pathway
   class State
     extend Forwardable
 
-    delegate %i([] []= fetch store include? values_at deconstruct_keys) => :@hash
+    delegate %i[[] []= fetch store include? values_at deconstruct_keys] => :@hash
 
     def initialize(operation, values = {})
       @hash = operation.context.merge(values)
@@ -158,27 +158,17 @@ module Pathway
         end
 
         # Execute step and preserve the former state
-        def step(callable, ...)
-          #:nocov:
-          if block_given?
-            warn "[DEPRECATION] Passing a block to the step method using `DSLMethods#step` is deprecated"
-          end
-          #:nocov:
-          bl = _callable(callable)
-          @result = @result.tee { |state| bl.call(state, ...) }
+        def step(callable, *, **, &)
+          bl = _callable(callable, &)
+          @result = @result.tee { |state| bl.call(state, *, **) }
         end
 
         # Execute step and modify the former state setting the key
-        def set(callable, *args, to: @operation.result_key, **kwargs, &bl)
-          #:nocov:
-          if block_given?
-            warn "[DEPRECATION] Passing a block to the step method using `DSLMethods#set` is deprecated"
-          end
-          #:nocov:
-          bl = _callable(callable)
+        def set(callable, *args, to: @operation.result_key, **kwargs, &)
+          bl = _callable(callable, &)
 
           @result = @result.then do |state|
-            wrap(bl.call(state, *args, **kwargs, &bl))
+            wrap(bl.call(state, *args, **kwargs))
               .then { |value| state.update(to => value) }
           end
         end
