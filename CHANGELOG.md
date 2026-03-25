@@ -1,6 +1,8 @@
 ## [1.3.0] - 2026-04-01
 ### Changed
 - Removed support for `Ruby` versions older than 3.3
+### Removed
+- Remove support for `DSLMethods#map`
 
 ## [1.2.0] - 2025-11-16
 ### Deprecated

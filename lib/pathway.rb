@@ -183,15 +183,6 @@ module Pathway
           end
         end
 
-        # Execute step and replace the current state completely
-        def map(callable, ...)
-          #:nocov:
-          warn "[DEPRECATION] `Pathway::DSLMethods#map` has been deprecated, use `step` instead"
-          #:nocov:
-          bl = _callable(callable)
-          @result = @result.then { |state| bl.call(state, ...) }
-        end
-
         def around(execution_strategy, &steps)
           @result.then do |state|
             steps_runner = ->(dsl = self) { dsl.run(&steps) }
