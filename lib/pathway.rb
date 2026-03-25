@@ -158,14 +158,14 @@ module Pathway
         end
 
         # Execute step and preserve the former state
-        def step(callable, *, **, &)
-          bl = _callable(callable, &)
+        def step(callable, *, **)
+          bl = _callable(callable)
           @result = @result.tee { |state| bl.call(state, *, **) }
         end
 
         # Execute step and modify the former state setting the key
-        def set(callable, *args, to: @operation.result_key, **kwargs, &)
-          bl = _callable(callable, &)
+        def set(callable, *args, to: @operation.result_key, **kwargs)
+          bl = _callable(callable)
 
           @result = @result.then do |state|
             wrap(bl.call(state, *args, **kwargs))
