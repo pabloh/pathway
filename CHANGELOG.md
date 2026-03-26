@@ -1,3 +1,7 @@
+## [1.4.0] - 2026-04-01
+### Added
+- Add `:active_record` plugin
+
 ## [1.3.0] - 2026-03-25
 ### Changed
 - Removed support for `Ruby` versions older than 3.3
