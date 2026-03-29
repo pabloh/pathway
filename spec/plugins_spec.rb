@@ -4,38 +4,37 @@ require "spec_helper"
 
 module Pathway
   RSpec.describe Operation do
-    module SimplePlugin
-      module InstanceMethods
-        attr :foo
-      end
+    before do
+      stub_const("SimplePlugin", Class.new do
+        const_set(:InstanceMethods, Module.new do
+          attr :foo
+        end)
 
-      module ClassMethods
-        attr_accessor :bar
+        const_set(:ClassMethods, Module.new do
+          attr_accessor :bar
 
-        def inherited(subclass)
-          super
-          subclass.bar = bar
+          def inherited(subclass)
+            super
+            subclass.bar = bar
+          end
+        end)
+
+        const_set(:DSLMethods, Module.new do
+          attr :qux
+        end)
+
+        def self.apply(opr, bar: nil)
+          opr.result_at :the_result
+          opr.bar = bar
         end
-      end
+      end)
 
-      module DSLMethods
-        attr :qux
-      end
+      stub_const("AnOperation", Class.new(Operation) do
+        plugin SimplePlugin, bar: "SOME VALUE"
+      end)
 
-      def self.apply(opr, bar: nil)
-        opr.result_at :the_result
-        opr.bar = bar
-      end
-    end
-
-    class AnOperation < Operation
-      plugin SimplePlugin, bar: "SOME VALUE"
-    end
-
-    class ASubOperation < AnOperation
-    end
-
-    class OtherOperation < Operation
+      stub_const("ASubOperation", Class.new(AnOperation))
+      stub_const("OtherOperation", Class.new(Operation))
     end
 
     describe ".plugin" do
