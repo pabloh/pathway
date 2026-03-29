@@ -881,7 +881,7 @@ module Pathway
       end
 
       let(:key)    { "some@email.com" }
-      let(:params) { { foo: 3, bar: 4} }
+      let(:params) { { foo: 3, bar: 4 } }
 
       describe "#find_model_with" do
         it "queries the db through the 'model_class'" do
@@ -899,7 +899,7 @@ module Pathway
         it "fetches an instance through 'model_class' into result key" do
           expect(MyModel).to receive(:first).with(email: key).and_return(object)
 
-          expect(operation.fetch_model({input: {email: key}}).value[:my_model]).to eq(object)
+          expect(operation.fetch_model({ input: { email: key } }).value[:my_model]).to eq(object)
         end
 
         context "when proving and external repository through 'from:'" do
@@ -953,7 +953,7 @@ module Pathway
         it "returns an error when no instance is found", :aggregate_failures do
           expect(MyModel).to receive(:first).with(email: key).and_return(nil)
 
-          result = operation.fetch_model({input: {email: key}})
+          result = operation.fetch_model({ input: { email: key } })
 
           expect(result).to be_an(Result::Failure)
           expect(result.error).to be_an(Pathway::Error)
@@ -964,7 +964,7 @@ module Pathway
         it "returns an error without hitting the database when search key is nil", :aggregate_failures do
           expect(MyModel).to_not receive(:first)
 
-          result = operation.fetch_model({input: {email: nil}})
+          result = operation.fetch_model({ input: { email: nil } })
 
           expect(result).to be_an(Result::Failure)
           expect(result.error).to be_an(Pathway::Error)

@@ -85,9 +85,9 @@ module Pathway
       if keys.any? && names.any?
         raise ArgumentError, "cannot mix positional and keyword arguments"
       elsif keys.any?
-        bl.call(**to_hash.slice(*keys))
+        yield(**to_hash.slice(*keys))
       else
-        bl.call(*to_hash.values_at(*names))
+        yield(*to_hash.values_at(*names))
       end
     end
 

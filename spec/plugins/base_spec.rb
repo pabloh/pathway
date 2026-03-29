@@ -73,7 +73,7 @@ module Pathway
           input.key?(:foo) ? input : Result.failure(:validation)
         end
 
-        allow(back_end).to receive(:call).and_return(123456)
+        allow(back_end).to receive(:call).and_return(123)
         allow(cond).to receive(:call).and_return(false)
 
         allow(notifier).to receive(:call)
@@ -147,14 +147,14 @@ module Pathway
         it "defines an non updating step" do
           expect(notifier).to receive(:call) { { result_value: 0 } }
 
-          expect(result.value).to eq(123456)
+          expect(result.value).to eq(123)
         end
       end
 
       describe "#around" do
         it "provides the steps and state as the block parameter" do
           expect(cond).to receive(:call) do |state|
-            expect(state.to_hash).to include(result_value: 123456, aux_value: 123456)
+            expect(state.to_hash).to include(result_value: 123, aux_value: 123)
 
             true
           end
