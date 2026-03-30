@@ -5,84 +5,86 @@ require "spec_helper"
 module Pathway
   module Plugins
     RSpec.describe "DryValidation" do
-      class SimpleOperation < Operation
-        plugin :dry_validation
+      before do
+        stub_const("SimpleModel", Struct.new(:name, :email, :role, :profile))
 
-        context :user, :repository
+        stub_const("SimpleOperation", Class.new(Operation) do
+          plugin :dry_validation
 
-        params do
-          required(:name).filled(:string)
-          optional(:email).maybe(:string)
-        end
-
-        process do
-          step :validate
-          set  :fetch_profile, to: :profile
-          set  :create_model
-        end
-
-        private
-
-        def fetch_profile(state)
-          wrap_if_present(repository.fetch(state[:params]))
-        end
-
-        def create_model(state)
-          params, profile = state.values_at(:params, :profile)
-          SimpleModel.new(*params.values, user.role, profile)
-        end
-      end
-
-      SimpleModel = Struct.new(:name, :email, :role, :profile)
-
-      class SimpleContract < Dry::Validation::Contract
-        params do
-          required(:age).filled(:integer)
-        end
-      end
-
-      class OperationWithOpt < Operation
-        plugin :dry_validation
-
-        context :quz
-
-        contract do
-          option :foo
+          context :user, :repository
 
           params do
-            required(:qux).filled(:string)
+            required(:name).filled(:string)
+            optional(:email).maybe(:string)
           end
 
-          rule(:qux) do
-            key.failure("not equal to :foo") unless value == foo
+          process do
+            step :validate
+            set  :fetch_profile, to: :profile
+            set  :create_model
           end
-        end
 
-        process do
-          step :validate, with: { foo: :quz }
-        end
-      end
+          private
 
-      class OperationWithAutoWire < Operation
-        plugin :dry_validation, auto_wire: true
+          def fetch_profile(state)
+            wrap_if_present(repository.fetch(state[:params]))
+          end
 
-        context :baz
+          def create_model(state)
+            params, profile = state.values_at(:params, :profile)
+            SimpleModel.new(*params.values, user.role, profile)
+          end
+        end)
 
-        contract do
-          option :baz
-
+        stub_const("SimpleContract", Class.new(Dry::Validation::Contract) do
           params do
-            required(:qux).filled(:string)
+            required(:age).filled(:integer)
+          end
+        end)
+
+        stub_const("OperationWithOpt", Class.new(Operation) do
+          plugin :dry_validation
+
+          context :quz
+
+          contract do
+            option :foo
+
+            params do
+              required(:qux).filled(:string)
+            end
+
+            rule(:qux) do
+              key.failure("not equal to :foo") unless value == foo
+            end
           end
 
-          rule(:qux) do
-            key.failure("not equal to :foo") unless value == baz
+          process do
+            step :validate, with: { foo: :quz }
           end
-        end
+        end)
 
-        process do
-          step :validate
-        end
+        stub_const("OperationWithAutoWire", Class.new(Operation) do
+          plugin :dry_validation, auto_wire: true
+
+          context :baz
+
+          contract do
+            option :baz
+
+            params do
+              required(:qux).filled(:string)
+            end
+
+            rule(:qux) do
+              key.failure("not equal to :foo") unless value == baz
+            end
+          end
+
+          process do
+            step :validate
+          end
+        end)
       end
 
       describe ".contract_class" do

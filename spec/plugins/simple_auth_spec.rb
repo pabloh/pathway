@@ -5,52 +5,54 @@ require "spec_helper"
 module Pathway
   module Plugins
     RSpec.describe "SimpleAuth" do
-      class AuthOperation < Operation
-        plugin :simple_auth
+      before do
+        stub_const("AuthOperation", Class.new(Operation) do
+          plugin :simple_auth
 
-        context :user
+          context :user
 
-        authorization { user.role == :admin }
+          authorization { user.role == :admin }
 
-        process do
-          step :authorize
-        end
-      end
+          process do
+            step :authorize
+          end
+        end)
 
-      class AuthOperationParam < Operation
-        plugin :simple_auth
+        stub_const("AuthOperationParam", Class.new(Operation) do
+          plugin :simple_auth
 
-        context value: :RESULT
+          context value: :RESULT
 
-        authorization { |value| value == :RESULT }
+          authorization { |value| value == :RESULT }
 
-        process do
-          step :authorize
-        end
-      end
+          process do
+            step :authorize
+          end
+        end)
 
-      class AuthOperationMultiParam < Operation
-        plugin :simple_auth
+        stub_const("AuthOperationMultiParam", Class.new(Operation) do
+          plugin :simple_auth
 
-        context :value1, :value2
+          context :value1, :value2
 
-        authorization { |first, second| first == 10 && second == 20 }
+          authorization { |first, second| first == 10 && second == 20 }
 
-        process do
-          step :authorize, using: %i[value1 value2]
-        end
-      end
+          process do
+            step :authorize, using: %i[value1 value2]
+          end
+        end)
 
-      class AuthOperationWithArray < Operation
-        plugin :simple_auth
+        stub_const("AuthOperationWithArray", Class.new(Operation) do
+          plugin :simple_auth
 
-        context :values
+          context :values
 
-        authorization { |values| values.size.even? }
+          authorization { |values| values.size.even? }
 
-        process do
-          step :authorize, using: :values
-        end
+          process do
+            step :authorize, using: :values
+          end
+        end)
       end
 
       describe "#authorize" do

@@ -4,9 +4,11 @@ require "spec_helper"
 
 module Pathway
   RSpec.describe State do
-    class SimpleOp < Operation
-      context :foo, bar: 10
-      result_at :the_result
+    before do
+      stub_const("SimpleOp", Class.new(Operation) do
+        context :foo, bar: 10
+        result_at :the_result
+      end)
     end
 
     let(:operation) { SimpleOp.new(foo: 20) }

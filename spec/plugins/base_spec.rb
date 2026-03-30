@@ -6,57 +6,59 @@ module Pathway
   module Plugins
     RSpec.describe Base do
 
-      class OperationWithSteps < Operation
-        context :validator, :back_end, :notifier, :cond
-        result_at :result_value
+      before do
+        stub_const("OperationWithSteps", Class.new(Operation) do
+          context :validator, :back_end, :notifier, :cond
+          result_at :result_value
 
-        process do
-          step :custom_validate
-          set  :get_value
-          set  :get_aux_value, to: :aux_value
-          around(->(run, st) { run.call if cond.call(st) }) do
-            set ->(_) { 99 }, to: :aux_value
-            set ->(_) { :UPDATED }
+          process do
+            step :custom_validate
+            set  :get_value
+            set  :get_aux_value, to: :aux_value
+            around(->(run, st) { run.call if cond.call(st) }) do
+              set ->(_) { 99 }, to: :aux_value
+              set ->(_) { :UPDATED }
+            end
+            around(:if_zero) do
+              set ->(_) { :ZERO }
+            end
+            if_true(:negative?) do
+              set ->(_) { :NEGATIVE }
+            end
+            if_false(:small?) do
+              set ->(_) { :BIG }
+            end
+            step :notify
           end
-          around(:if_zero) do
-            set ->(_) { :ZERO }
+
+          def custom_validate(state)
+            state[:params] = @validator.call(state)
           end
-          if_true(:negative?) do
-            set ->(_) { :NEGATIVE }
+
+          def get_value(state)
+            @back_end.call(state[:params])
           end
-          if_false(:small?) do
-            set ->(_) { :BIG }
+
+          def get_aux_value(state)
+            state[result_key]
           end
-          step :notify
-        end
 
-        def custom_validate(state)
-          state[:params] = @validator.call(state)
-        end
+          def if_zero(run, state)
+            run.call if state[:result_value] == 0
+          end
 
-        def get_value(state)
-          @back_end.call(state[:params])
-        end
+          def negative?(state)
+            state[:result_value].is_a?(Numeric) && state[:result_value].negative?
+          end
 
-        def get_aux_value(state)
-          state[result_key]
-        end
+          def small?(state)
+            !state[:result_value].is_a?(Numeric) || state[:result_value].abs < 1_000_000
+          end
 
-        def if_zero(run, state)
-          run.call if state[:result_value] == 0
-        end
-
-        def negative?(state)
-          state[:result_value].is_a?(Numeric) && state[:result_value].negative?
-        end
-
-        def small?(state)
-          !state[:result_value].is_a?(Numeric) || state[:result_value].abs < 1_000_000
-        end
-
-        def notify(state)
-          @notifier.call(state)
-        end
+          def notify(state)
+            @notifier.call(state)
+          end
+        end)
       end
 
       let(:validator) { double }

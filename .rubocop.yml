@@ -115,8 +115,5 @@ Metrics/ModuleLength:
 Style/SafeNavigation:
   Enabled: False
 
-Lint/ConstantDefinitionInBlock:
-  Enabled: false
-
 Layout/LineLength:
   Enabled: false

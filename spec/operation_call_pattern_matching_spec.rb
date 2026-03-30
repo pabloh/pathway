@@ -6,12 +6,14 @@ module Pathway
   class Result
     module Mixin
       Rspec.describe "Operation call with pattern matching" do
-        class RespOperation < Operation
-          context :with
+        before do
+          stub_const("RespOperation", Class.new(Operation) do
+            context :with
 
-          def call(_)
-            with
-          end
+            def call(_)
+              with
+            end
+          end)
         end
 
         let(:input)   { {} }

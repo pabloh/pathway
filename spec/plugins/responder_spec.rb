@@ -5,14 +5,16 @@ require "spec_helper"
 module Pathway
   module Plugins
     RSpec.describe "Responder" do
-      class RespOperation < Operation
-        plugin :responder
+      before do
+        stub_const("RespOperation", Class.new(Operation) do
+          plugin :responder
 
-        context :with
+          context :with
 
-        def call(_)
-          with
-        end
+          def call(_)
+            with
+          end
+        end)
       end
 
       let(:input)   { {} }

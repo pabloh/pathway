@@ -5,57 +5,59 @@ require "spec_helper"
 module Pathway
   module Plugins
     RSpec.describe "SequelModels" do
-      DB = Sequel.mock
-      MyModel = Class.new(Sequel::Model(DB[:foo])) { set_primary_key :pk }
+      before do
+        stub_const("DB", Sequel.mock)
+        stub_const("MyModel", Class.new(Sequel::Model(DB[:foo])) { set_primary_key :pk })
 
-      class PkOperation < Operation
-        plugin :sequel_models, model: MyModel
-      end
+        stub_const("PkOperation", Class.new(Operation) do
+          plugin :sequel_models, model: MyModel
+        end)
 
-      class MyOperation < Operation
-        plugin :sequel_models
+        stub_const("MyOperation", Class.new(Operation) do
+          plugin :sequel_models
 
-        context mailer: nil
+          context mailer: nil
 
-        model MyModel, search_by: :email
+          model MyModel, search_by: :email
 
-        process do
-          step :fetch_model
-        end
-      end
-
-      class MailerOperation < MyOperation
-        process do
-          transaction do
+          process do
             step :fetch_model
-            after_commit do
-              step :send_emails
+          end
+        end)
+
+        stub_const("MailerOperation", Class.new(MyOperation) do
+          process do
+            transaction do
+              step :fetch_model
+              after_commit do
+                step :send_emails
+              end
+            end
+            step :as_hash
+          end
+
+          def as_hash(state)
+            state[:my_model] = { model: state[:my_model] }
+          end
+
+          def send_emails(state)
+            @mailer.send_emails(state[:my_model]) if @mailer
+          end
+        end)
+
+        stub_const("ChainedOperation", Class.new(MyOperation) do
+          result_at :result
+
+          process do
+            transaction do
+              set :chain_operation, to: :result
             end
           end
-          step :as_hash
-        end
 
-        def as_hash(state)
-          state[:my_model] = { model: state[:my_model] }
-        end
-
-        def send_emails(state)
-          @mailer.send_emails(state[:my_model]) if @mailer
-        end
-      end
-
-      class ChainedOperation < MyOperation
-        result_at :result
-
-        process do
-          transaction do
-            set :chain_operation, to: :result
+          def chain_operation(state)
+            MailerOperation.call(context, state[:input])
           end
-        end
-
-        def chain_operation(state)
-          MailerOperation.call(context, state[:input])
-        end
+        end)
       end
 
       describe "DSL" do
@@ -82,19 +84,20 @@ module Pathway
             end
 
             context "a conditional," do
-              class IfConditionalOperation < PkOperation
-                context :should_run
+              before do
+                stub_const("IfConditionalOperation", Class.new(PkOperation) do
+                  context :should_run
 
-                process do
-                  transaction(if: :should_run?) do
-                    step :fetch_model
+                  process do
+                    transaction(if: :should_run?) do
+                      step :fetch_model
+                    end
                   end
-                end
 
-                private
-                def should_run?(state)= state[:should_run]
+                  private
+                  def should_run?(state)= state[:should_run]
+                end)
               end
-
               let(:operation) { IfConditionalOperation.new(should_run: should_run) }
               let(:params) { { pk: 77 } }
 
@@ -123,12 +126,13 @@ module Pathway
           end
 
           context "when providing a step" do
-            class FetchStepOperation < MyOperation
-              process do
-                transaction :fetch_model
-              end
+            before do
+              stub_const("FetchStepOperation", Class.new(MyOperation) do
+                process do
+                  transaction :fetch_model
+                end
+              end)
             end
-
             let(:operation) { FetchStepOperation.new(mailer: mailer) }
             before { allow(DB).to receive(:transaction).and_call_original }
 
@@ -145,21 +149,22 @@ module Pathway
             end
 
             context "and conditional" do
-              class UnlessConditionalOperation < PkOperation
-                context :should_skip
+              before do
+                stub_const("UnlessConditionalOperation", Class.new(PkOperation) do
+                  context :should_skip
 
-                process do
-                  transaction :create_model, unless: :should_skip?
-                end
+                  process do
+                    transaction :create_model, unless: :should_skip?
+                  end
 
-                def create_model(state)
-                  state[result_key] = model_class.create(state[:input])
-                end
+                  def create_model(state)
+                    state[result_key] = model_class.create(state[:input])
+                  end
 
-                private
-                def should_skip?(state)= state[:should_skip]
+                  private
+                  def should_skip?(state)= state[:should_skip]
+                end)
               end
-
               let(:operation) { UnlessConditionalOperation.new(should_skip: should_skip) }
               let(:params) { { pk: 99 } }
 
@@ -188,12 +193,13 @@ module Pathway
           end
 
           context "when both an :if and :unless conditional" do
-            class InvalidUseOfCondOperation < MyOperation
-              process do
-                transaction :perform_db_action, if: :is_good?, unless: :is_bad?
-              end
+            before do
+              stub_const("InvalidUseOfCondOperation", Class.new(MyOperation) do
+                process do
+                  transaction :perform_db_action, if: :is_good?, unless: :is_bad?
+                end
+              end)
             end
-
             let(:operation) { InvalidUseOfCondOperation.new }
 
             it "raises an error" do
@@ -203,14 +209,15 @@ module Pathway
           end
 
           context "when providing a block and a step" do
-            class AmbivalentTransactOperation < MyOperation
-              process do
-                transaction :perform_db_action do
-                  step :perform_other_db_action
+            before do
+              stub_const("AmbivalentTransactOperation", Class.new(MyOperation) do
+                process do
+                  transaction :perform_db_action do
+                    step :perform_other_db_action
+                  end
                 end
-              end
+              end)
             end
-
             let(:operation) { AmbivalentTransactOperation.new }
 
             it "raises an error" do
@@ -220,12 +227,13 @@ module Pathway
           end
 
           context "when not providing a block nor a step" do
-            class EmptyTransacOperation < MyOperation
-              process do
-                transaction
-              end
+            before do
+              stub_const("EmptyTransacOperation", Class.new(MyOperation) do
+                process do
+                  transaction
+                end
+              end)
             end
-
             let(:operation) { EmptyTransacOperation.new }
 
             it "raises an error" do
@@ -270,19 +278,20 @@ module Pathway
           end
 
           context "when providing a step" do
-            class SendEmailStepOperation < MyOperation
-              process do
-                transaction do
-                  step :fetch_model
-                  after_commit :send_emails
+            before do
+              stub_const("SendEmailStepOperation", Class.new(MyOperation) do
+                process do
+                  transaction do
+                    step :fetch_model
+                    after_commit :send_emails
+                  end
                 end
-              end
 
-              def send_emails(state)
-                @mailer.send_emails(state[:my_model]) if @mailer
-              end
+                def send_emails(state)
+                  @mailer.send_emails(state[:my_model]) if @mailer
+                end
+              end)
             end
-
             let(:operation) { SendEmailStepOperation.new(mailer: mailer) }
             before { expect(DB).to receive(:transaction).and_call_original }
 
@@ -305,26 +314,27 @@ module Pathway
 
           context "with conditional execution" do
             context "using :if with and a block" do
-              class IfConditionalAfterCommitOperation < MyOperation
-                context :should_run
+              before do
+                stub_const("IfConditionalAfterCommitOperation", Class.new(MyOperation) do
+                  context :should_run
 
-                process do
-                  transaction do
-                    step :fetch_model
-                    after_commit(if: :should_run?) do
-                      step :send_emails
+                  process do
+                    transaction do
+                      step :fetch_model
+                      after_commit(if: :should_run?) do
+                        step :send_emails
+                      end
                     end
                   end
-                end
 
-                def send_emails(state)
-                  @mailer.send_emails(state[:my_model]) if @mailer
-                end
+                  def send_emails(state)
+                    @mailer.send_emails(state[:my_model]) if @mailer
+                  end
 
-                private
-                def should_run?(state) = state[:should_run]
+                  private
+                  def should_run?(state) = state[:should_run]
+                end)
               end
-
               let(:operation) { IfConditionalAfterCommitOperation.new(mailer: mailer, should_run: should_run) }
               let(:params) { { email: "asd@fgh.net" } }
 
@@ -354,26 +364,27 @@ module Pathway
             end
 
             context "using :unless and a block" do
-              class UnlessConditionalAfterCommitOperation < MyOperation
-                context :should_skip
+              before do
+                stub_const("UnlessConditionalAfterCommitOperation", Class.new(MyOperation) do
+                  context :should_skip
 
-                process do
-                  transaction do
-                    step :fetch_model
-                    after_commit(unless: :should_skip?) do
-                      step :send_emails
+                  process do
+                    transaction do
+                      step :fetch_model
+                      after_commit(unless: :should_skip?) do
+                        step :send_emails
+                      end
                     end
                   end
-                end
 
-                def send_emails(state)
-                  @mailer.send_emails(state[:my_model]) if @mailer
-                end
+                  def send_emails(state)
+                    @mailer.send_emails(state[:my_model]) if @mailer
+                  end
 
-                private
-                def should_skip?(state) = state[:should_skip]
+                  private
+                  def should_skip?(state) = state[:should_skip]
+                end)
               end
-
               let(:operation) { UnlessConditionalAfterCommitOperation.new(mailer: mailer, should_skip: should_skip) }
               let(:params) { { email: "asd@fgh.net" } }
 
@@ -403,24 +414,25 @@ module Pathway
             end
 
             context "using :if with step name" do
-              class IfStepConditionalAfterCommitOperation < MyOperation
-                context :should_run
+              before do
+                stub_const("IfStepConditionalAfterCommitOperation", Class.new(MyOperation) do
+                  context :should_run
 
-                process do
-                  transaction do
-                    step :fetch_model
-                    after_commit :send_emails, if: :should_run?
+                  process do
+                    transaction do
+                      step :fetch_model
+                      after_commit :send_emails, if: :should_run?
+                    end
                   end
-                end
 
-                def send_emails(state)
-                  @mailer.send_emails(state[:my_model]) if @mailer
-                end
+                  def send_emails(state)
+                    @mailer.send_emails(state[:my_model]) if @mailer
+                  end
 
-                private
-                def should_run?(state) = state[:should_run]
+                  private
+                  def should_run?(state) = state[:should_run]
+                end)
               end
-
               before { allow(MyModel).to receive(:first).with(email: "asd@fgh.net").and_return(model) }
               let(:operation) { IfStepConditionalAfterCommitOperation.new(mailer: mailer, should_run: should_run) }
 
@@ -448,14 +460,15 @@ module Pathway
             end
 
             context "when both :if and :unless are provided" do
-              class InvalidConditionalAfterCommitOperation < MyOperation
-                process do
-                  transaction do
-                    after_commit :send_emails, if: :is_good?, unless: :is_bad?
+              before do
+                stub_const("InvalidConditionalAfterCommitOperation", Class.new(MyOperation) do
+                  process do
+                    transaction do
+                      after_commit :send_emails, if: :is_good?, unless: :is_bad?
+                    end
                   end
-                end
+                end)
               end
-
               let(:operation) { InvalidConditionalAfterCommitOperation.new }
 
               it "raises an error" do
@@ -466,16 +479,17 @@ module Pathway
           end
 
           context "when providing a block and a step" do
-            class AmbivalentAfterCommitOperation < MyOperation
-              process do
-                transaction do
-                  after_commit :perform_db_action do
-                    step :perform_other_db_action
+            before do
+              stub_const("AmbivalentAfterCommitOperation", Class.new(MyOperation) do
+                process do
+                  transaction do
+                    after_commit :perform_db_action do
+                      step :perform_other_db_action
+                    end
                   end
                 end
-              end
+              end)
             end
-
             let(:operation) { AmbivalentAfterCommitOperation.new }
 
             it "raises an error" do
@@ -485,14 +499,15 @@ module Pathway
           end
 
           context "when not providing a block nor a step" do
-            class InvalidAfterCommitOperation < MyOperation
-              process do
-                transaction do
-                  after_commit
+            before do
+              stub_const("InvalidAfterCommitOperation", Class.new(MyOperation) do
+                process do
+                  transaction do
+                    after_commit
+                  end
                 end
-              end
+              end)
             end
-
             let(:operation) { InvalidAfterCommitOperation.new }
 
             it "raises an error" do
@@ -503,28 +518,10 @@ module Pathway
         end
 
         describe "#after_rollback" do
-          class LoggerOperation < MyOperation
-            context :logger
+          before do
+            stub_const("LoggerOperation", Class.new(MyOperation) do
+              context :logger
 
-            process do
-              transaction do
-                after_rollback do
-                  step :log_error
-                end
-
-                step :fetch_model
-              end
-            end
-
-            def log_error(_)
-              @logger.log("Ohhh noes!!!!")
-            end
-          end
-
-          let(:logger) { double }
-
-          context "when providing a block" do
-            class RollbackWithBlockOperation < LoggerOperation
               process do
                 transaction do
                   after_rollback do
@@ -534,8 +531,28 @@ module Pathway
                   step :fetch_model
                 end
               end
-            end
 
+              def log_error(_)
+                @logger.log("Ohhh noes!!!!")
+              end
+            end)
+          end
+          let(:logger) { double }
+
+          context "when providing a block" do
+            before do
+              stub_const("RollbackWithBlockOperation", Class.new(LoggerOperation) do
+                process do
+                  transaction do
+                    after_rollback do
+                      step :log_error
+                    end
+
+                    step :fetch_model
+                  end
+                end
+              end)
+            end
             let(:operation) { RollbackWithBlockOperation.new(logger: logger) }
             before { expect(DB).to receive(:transaction).and_call_original }
 
@@ -555,15 +572,16 @@ module Pathway
           end
 
           context "when providing a step" do
-            class RollbackStepOperation < LoggerOperation
-              process do
-                transaction do
-                  after_rollback :log_error
-                  step :fetch_model
+            before do
+              stub_const("RollbackStepOperation", Class.new(LoggerOperation) do
+                process do
+                  transaction do
+                    after_rollback :log_error
+                    step :fetch_model
+                  end
                 end
-              end
+              end)
             end
-
             let(:operation) { RollbackStepOperation.new(logger: logger) }
             before { expect(DB).to receive(:transaction).and_call_original }
 
@@ -584,22 +602,23 @@ module Pathway
 
           context "with conditional execution" do
             context "using :if with a block" do
-              class IfConditionalAfterRollbackOperation < LoggerOperation
-                context :should_run
+              before do
+                stub_const("IfConditionalAfterRollbackOperation", Class.new(LoggerOperation) do
+                  context :should_run
 
-                process do
-                  transaction do
-                    after_rollback(if: :should_run?) do
-                      step :log_error
+                  process do
+                    transaction do
+                      after_rollback(if: :should_run?) do
+                        step :log_error
+                      end
+                      step :fetch_model
                     end
-                    step :fetch_model
                   end
-                end
 
-                private
-                def should_run?(state) = state[:should_run]
+                  private
+                  def should_run?(state) = state[:should_run]
+                end)
               end
-
               let(:operation) { IfConditionalAfterRollbackOperation.new(logger: logger, should_run: should_run) }
               let(:params) { { email: "asd@fgh.net" } }
 
@@ -628,22 +647,23 @@ module Pathway
             end
 
             context "using :unless with a block" do
-              class UnlessConditionalAfterRollbackOperation < LoggerOperation
-                context :should_skip
+              before do
+                stub_const("UnlessConditionalAfterRollbackOperation", Class.new(LoggerOperation) do
+                  context :should_skip
 
-                process do
-                  transaction do
-                    after_rollback(unless: :should_skip?) do
-                      step :log_error
+                  process do
+                    transaction do
+                      after_rollback(unless: :should_skip?) do
+                        step :log_error
+                      end
+                      step :fetch_model
                     end
-                    step :fetch_model
                   end
-                end
 
-                private
-                def should_skip?(state) = state[:should_skip]
+                  private
+                  def should_skip?(state) = state[:should_skip]
+                end)
               end
-
               let(:operation) { UnlessConditionalAfterRollbackOperation.new(logger: logger, should_skip: should_skip) }
               let(:params) { { email: "asd@fgh.net" } }
 
@@ -672,20 +692,21 @@ module Pathway
             end
 
             context "using :if with step name" do
-              class IfStepConditionalAfterRollbackOperation < LoggerOperation
-                context :should_run
+              before do
+                stub_const("IfStepConditionalAfterRollbackOperation", Class.new(LoggerOperation) do
+                  context :should_run
 
-                process do
-                  transaction do
-                    after_rollback :log_error, if: :should_run?
-                    step :fetch_model
+                  process do
+                    transaction do
+                      after_rollback :log_error, if: :should_run?
+                      step :fetch_model
+                    end
                   end
-                end
 
-                private
-                def should_run?(state) = state[:should_run]
+                  private
+                  def should_run?(state) = state[:should_run]
+                end)
               end
-
               before { allow(MyModel).to receive(:first).with(email: "asd@fgh.net").and_return(nil) }
               let(:operation) { IfStepConditionalAfterRollbackOperation.new(logger: logger, should_run: should_run) }
 
@@ -712,14 +733,15 @@ module Pathway
             end
 
             context "when both :if and :unless are provided" do
-              class InvalidConditionalAfterRollbackOperation < LoggerOperation
-                process do
-                  transaction do
-                    after_rollback :log_error, if: :is_good?, unless: :is_bad?
+              before do
+                stub_const("InvalidConditionalAfterRollbackOperation", Class.new(LoggerOperation) do
+                  process do
+                    transaction do
+                      after_rollback :log_error, if: :is_good?, unless: :is_bad?
+                    end
                   end
-                end
+                end)
               end
-
               let(:operation) { InvalidConditionalAfterRollbackOperation.new(logger: logger) }
 
               it "raises an error" do
@@ -730,16 +752,17 @@ module Pathway
           end
 
           context "when providing a block and a step" do
-            class AmbivalentAfterRollbackOperation < MyOperation
-              process do
-                transaction do
-                  after_rollback :perform_db_action do
-                    step :perform_other_db_action
+            before do
+              stub_const("AmbivalentAfterRollbackOperation", Class.new(MyOperation) do
+                process do
+                  transaction do
+                    after_rollback :perform_db_action do
+                      step :perform_other_db_action
+                    end
                   end
                 end
-              end
+              end)
             end
-
             let(:operation) { AmbivalentAfterRollbackOperation.new }
 
             it "raises an error" do
@@ -749,14 +772,15 @@ module Pathway
           end
 
           context "when not providing a block nor a step" do
-            class InvalidAfterRollbackOperation < MyOperation
-              process do
-                transaction do
-                  after_rollback
+            before do
+              stub_const("InvalidAfterRollbackOperation", Class.new(MyOperation) do
+                process do
+                  transaction do
+                    after_rollback
+                  end
                 end
-              end
+              end)
             end
-
             let(:operation) { InvalidAfterRollbackOperation.new }
 
             it "raises an error" do
@@ -766,55 +790,57 @@ module Pathway
           end
 
           context "when nesting operations with rollback callbacks" do
-            class InnerFailingOperation < MyOperation
-              context :notifier
+            before do
+              stub_const("InnerFailingOperation", Class.new(MyOperation) do
+                context :notifier
 
-              process do
-                transaction do
-                  after_rollback :notify_inner_rollback
-                  step :fail_step
+                process do
+                  transaction do
+                    after_rollback :notify_inner_rollback
+                    step :fail_step
+                  end
+                  step :after_transaction_step
                 end
-                step :after_transaction_step
-              end
 
-              def fail_step(_state)
-                @notifier.inner_fail_step
-                error(:inner_operation_failed)
-              end
-
-              def notify_inner_rollback(_state)= @notifier.inner_rollback
-              def after_transaction_step(_state)= @notifier.inner_after_transaction
-            end
-
-            class OuterOperationWithRollback < MyOperation
-              context :notifier
-
-              process do
-                transaction do
-                  after_rollback :notify_outer_rollback
-                  step :call_inner_operation
-                  step :after_inner_call_step
-                  step :fail_again
+                def fail_step(_state)
+                  @notifier.inner_fail_step
+                  error(:inner_operation_failed)
                 end
-                step :final_step
-              end
 
-              def call_inner_operation(state)
-                state[:inner_result] = InnerFailingOperation.call({ notifier: @notifier }, state[:input])
-                state
-              end
-
-              def fail_again(state)
-                @notifier.outter_fail_step
-
-                error(:outter_operation_failed) if state[:inner_result].failure?
-              end
-
-              def notify_outer_rollback(_state)= @notifier.outer_rollback
-              def after_inner_call_step(_state)= @notifier.after_inner_call_step
-              def final_step(_state)= @notifier.final_step
+                def notify_inner_rollback(_state)= @notifier.inner_rollback
+                def after_transaction_step(_state)= @notifier.inner_after_transaction
+              end)
             end
+            before do
+              stub_const("OuterOperationWithRollback", Class.new(MyOperation) do
+                context :notifier
 
+                process do
+                  transaction do
+                    after_rollback :notify_outer_rollback
+                    step :call_inner_operation
+                    step :after_inner_call_step
+                    step :fail_again
+                  end
+                  step :final_step
+                end
+
+                def call_inner_operation(state)
+                  state[:inner_result] = InnerFailingOperation.call({ notifier: @notifier }, state[:input])
+                  state
+                end
+
+                def fail_again(state)
+                  @notifier.outter_fail_step
+
+                  error(:outter_operation_failed) if state[:inner_result].failure?
+                end
+
+                def notify_outer_rollback(_state)= @notifier.outer_rollback
+                def after_inner_call_step(_state)= @notifier.after_inner_call_step
+                def final_step(_state)= @notifier.final_step
+              end)
+            end
             let(:notifier) { spy }
             let(:operation) { OuterOperationWithRollback.new(notifier: notifier) }
 
@@ -1005,12 +1031,13 @@ module Pathway
           end
 
           context "but :fetch_model step specifies overwrite: true" do
-            class OwOperation < MyOperation
-              process do
-                step :fetch_model, overwrite: true
-              end
+            before do
+              stub_const("OwOperation", Class.new(MyOperation) do
+                process do
+                  step :fetch_model, overwrite: true
+                end
+              end)
             end
-
             let(:operation) { OwOperation.new(ctx) }
 
             it "fetches the model from the DB anyway" do

@@ -4,14 +4,16 @@ require "spec_helper"
 
 module Pathway
   RSpec.describe State do
-    class SimpleOp < Operation
-      context :foo, bar: 10
-      result_at :the_result
+    before do
+      stub_const("SimpleOp", Class.new(Operation) do
+        context :foo, bar: 10
+        result_at :the_result
+      end)
     end
 
     let(:operation) { SimpleOp.new(foo: 20) }
     let(:values)    { { input: "some value" } }
-    subject(:state) { State.new(operation, values) }
+    subject(:state) { described_class.new(operation, values) }
 
     describe "#initialize" do
       it "initialize its variables from the operation context and values argument" do

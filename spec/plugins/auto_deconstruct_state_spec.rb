@@ -5,43 +5,45 @@ require "spec_helper"
 module Pathway
   module Plugins
     RSpec.describe "AutoDeconstructState" do
-      class KwargsOperation < Operation
-        plugin :auto_deconstruct_state
+      before do
+        stub_const("KwargsOperation", Class.new(Operation) do
+          plugin :auto_deconstruct_state
 
-        context :validator, :name_repo, :email_repo, :notifier
+          context :validator, :name_repo, :email_repo, :notifier
 
-        process do
-          step :custom_validate
-          step :fetch_and_set_name, with: :id
-          set  :fetch_email, to: :email
-          set  :create_model
-          step :notify
-        end
-
-        def custom_validate(state)
-          state[:params] = @validator.call(state[:input])
-        end
-
-        def fetch_and_set_name(state, with:)
-          state[:name] = @name_repo.call(state[:params][with])
-        end
-
-        def fetch_email(name:, **, &_)
-          @email_repo.call(name)
-        end
-
-        def create_model(name:, email:, **)
-          UserModel.new(name, email)
-        end
-
-        def notify(st)
-          st.u do |value:|
-            @notifier.call(value)
+          process do
+            step :custom_validate
+            step :fetch_and_set_name, with: :id
+            set  :fetch_email, to: :email
+            set  :create_model
+            step :notify
           end
-        end
-      end
 
-      UserModel = Struct.new(:name, :email)
+          def custom_validate(state)
+            state[:params] = @validator.call(state[:input])
+          end
+
+          def fetch_and_set_name(state, with:)
+            state[:name] = @name_repo.call(state[:params][with])
+          end
+
+          def fetch_email(name:, **, &_)
+            @email_repo.call(name)
+          end
+
+          def create_model(name:, email:, **)
+            UserModel.new(name, email)
+          end
+
+          def notify(st)
+            st.u do |value:|
+              @notifier.call(value)
+            end
+          end
+        end)
+
+        stub_const("UserModel", Struct.new(:name, :email))
+      end
 
       describe "#call" do
         subject(:operation) { KwargsOperation.new(ctx) }
