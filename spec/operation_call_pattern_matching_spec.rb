@@ -2,158 +2,160 @@
 
 require "spec_helper"
 
-module Pathway
-  class Result
-    module Mixin
-      Rspec.describe "Operation call with pattern matching" do
-        before do
-          stub_const("RespOperation", Class.new(Operation) do
-            context :with
+RSpec.describe "Operation call with pattern matching" do
+  include Pathway::Result::Mixin
 
-            def call(_)
-              with
-            end
-          end)
+  before do
+    stub_const("RespOperation", Class.new(Pathway::Operation) do
+      context :with
+
+      def call(_)
+        with
+      end
+    end)
+  end
+
+  let(:input)   { {} }
+  let(:context) { { with: passed_result } }
+
+  context "when calling operation using 'case'" do
+    context "providing a single variable name as pattern" do
+      let(:result) do
+        case RespOperation.call(context, input)
+        in Pathway::Result::Success(value) then "Returning: " + value
+        in Pathway::Result::Failure(error) then error.message
+        end
+      end
+
+      context "and the result is succesfull" do
+        let(:passed_result) { Pathway::Result.success("VALUE") }
+
+        it "returns the success result" do
+          expect(result).to eq("Returning: VALUE")
+        end
+      end
+
+      context "and the result is a failure" do
+        let(:passed_result) do
+          Pathway::Result.failure(Pathway::Error.new(type: :error, message: "AN ERROR!"))
         end
 
-        let(:input)   { {} }
-        let(:context) { { with: passed_result } }
+        it "returns the failure result" do
+          expect(result).to eq("AN ERROR!")
+        end
+      end
+    end
 
-        context "when calling operation using 'case'" do
-          context "providing a single variable name as pattern" do
-            let(:result) do
-              case RespOperation.call(context, input)
-              in Success(value) then "Returning: " + value
-              in Failure(error) then error.message
-              end
+    context "providing Hash based patterns," do
+      context "and the underlying result does not support Hash based patterns" do
+        let(:passed_result) { Pathway::Result.success("VALUE") }
+
+        it "raises a non matching error" do
+          expect do
+            case RespOperation.call(context, input)
+            in Pathway::Result::Success(value:) then value
+            in Pathway::Result::Failure(error) then error
             end
+          end.to raise_error(NoMatchingPatternError)
+        end
+      end
 
-            context "and the result is succesfull" do
-              let(:passed_result) { Result.success("VALUE") }
+      let(:result) do
+        case RespOperation.call(context, input)
+        in Pathway::Result::Success(value) then "Returning: " + value
+        in Pathway::Result::Failure(type: :forbidden) then "Forbidden"
+        in Pathway::Result::Failure(type: :validation, details:) then "Invalid: " + details.join(", ")
+        in Pathway::Result::Failure(details:) then "Other: " + details.join(" ")
+        end
+      end
 
-              it "returns the success result" do
-                expect(result).to eq("Returning: VALUE")
-              end
-            end
+      context "and the result is succesfull" do
+        let(:passed_result) { Pathway::Result.success("VALUE") }
 
-            context "and the result is a failure" do
-              let(:passed_result) { Result.failure(Error.new(type: :error, message: "AN ERROR!")) }
+        it "returns the success result" do
+          expect(result).to eq("Returning: VALUE")
+        end
+      end
 
-              it "returns the failure result" do
-                expect(result).to eq("AN ERROR!")
-              end
-            end
+      context "the result is a failure" do
+        context "and the pattern is Failure with only :type specified" do
+          let(:passed_result) do
+            Pathway::Result.failure(Pathway::Error.new(type: :forbidden))
           end
 
-          context "providing Hash based patterns," do
-            context "and the underlying result does not support Hash based patterns" do
-              let(:passed_result) { Result.success("VALUE") }
+          it "returns the result according to :type" do
+            expect(result).to eq("Forbidden")
+          end
+        end
 
-              it "raises a non matching error" do
-                expect do
-                  case RespOperation.call(context, input)
-                  in Success(value:) then value
-                  in Failure(error) then error
-                  end
-                end.to raise_error(NoMatchingPatternError)
-              end
-            end
-
-            let(:result) do
-              case RespOperation.call(context, input)
-              in Success(value) then "Returning: " + value
-              in Failure(type: :forbidden) then "Forbidden"
-              in Failure(type: :validation, details:) then "Invalid: " + details.join(", ")
-              in Failure(details:) then "Other: " + details.join(" ")
-              end
-            end
-
-            context "and the result is succesfull" do
-              let(:passed_result) { Result.success("VALUE") }
-
-              it "returns the success result" do
-                expect(result).to eq("Returning: VALUE")
-              end
-            end
-
-            context "the result is a failure" do
-              context "and the pattern is Failure with only :type specified" do
-                let(:passed_result) do
-                  Result.failure(Error.new(type: :forbidden))
-                end
-
-                it "returns the result according to :type" do
-                  expect(result).to eq("Forbidden")
-                end
-              end
-
-              context "and the pattern is Failure with :type and :details specified" do
-                let(:passed_result) do
-                  Result.failure(Error.new(type: :validation, details: ["name missing", "email missing"]))
-                end
-
-                it "returns the result according to :type" do
-                  expect(result).to eq("Invalid: name missing, email missing")
-                end
-              end
-
-              context "and the pattern is Failure with no specified :type" do
-                let(:passed_result) { Result.failure(Error.new(type: :misc, details: %w[some errors])) }
-
-                it "executes the least specific pattern" do
-                  expect(result).to eq("Other: some errors")
-                end
-              end
-            end
+        context "and the pattern is Failure with :type and :details specified" do
+          let(:passed_result) do
+            Pathway::Result.failure(Pathway::Error.new(type: :validation, details: ["name missing", "email missing"]))
           end
 
-          context "providing Array based patterns," do
-            let(:result) do
-              case RespOperation.call(context, input)
-              in Success(value) then "Returning: " + value
-              in Failure([:forbidden,]) then "Forbidden"
-              in Failure([:validation, _, details]) then "Invalid: " + details.join(", ")
-              in Failure([*, details]) then "Other: " + details.join(" ")
-              end
-            end
+          it "returns the result according to :type" do
+            expect(result).to eq("Invalid: name missing, email missing")
+          end
+        end
 
-            context "and the result is succesfull" do
-              let(:passed_result) { Result.success("VALUE") }
+        context "and the pattern is Failure with no specified :type" do
+          let(:passed_result) do
+            Pathway::Result.failure(Pathway::Error.new(type: :misc, details: %w[some errors]))
+          end
 
-              it "returns the success result" do
-                expect(result).to eq("Returning: VALUE")
-              end
-            end
+          it "executes the least specific pattern" do
+            expect(result).to eq("Other: some errors")
+          end
+        end
+      end
+    end
 
-            context "the result is a failure" do
-              context "and the pattern is Failure with only :type specified" do
-                let(:passed_result) do
-                  Result.failure(Error.new(type: :forbidden))
-                end
+    context "providing Array based patterns," do
+      let(:result) do
+        case RespOperation.call(context, input)
+        in Pathway::Result::Success(value) then "Returning: " + value
+        in Pathway::Result::Failure([:forbidden,]) then "Forbidden"
+        in Pathway::Result::Failure([:validation, _, details]) then "Invalid: " + details.join(", ")
+        in Pathway::Result::Failure([*, details]) then "Other: " + details.join(" ")
+        end
+      end
 
-                it "returns the result according to :type" do
-                  expect(result).to eq("Forbidden")
-                end
-              end
+      context "and the result is succesfull" do
+        let(:passed_result) { Pathway::Result.success("VALUE") }
 
-              context "and the pattern is Failure with :type and :details specified" do
-                let(:passed_result) do
-                  Result.failure(Error.new(type: :validation, details: ["name missing", "email missing"]))
-                end
+        it "returns the success result" do
+          expect(result).to eq("Returning: VALUE")
+        end
+      end
 
-                it "returns the result according to :type" do
-                  expect(result).to eq("Invalid: name missing, email missing")
-                end
-              end
+      context "the result is a failure" do
+        context "and the pattern is Failure with only :type specified" do
+          let(:passed_result) do
+            Pathway::Result.failure(Pathway::Error.new(type: :forbidden))
+          end
 
-              context "and the pattern is Failure with no specified :type" do
-                let(:passed_result) { Result.failure(Error.new(type: :misc, details: %w[some errors])) }
+          it "returns the result according to :type" do
+            expect(result).to eq("Forbidden")
+          end
+        end
 
-                it "executes the least specific pattern" do
-                  expect(result).to eq("Other: some errors")
-                end
-              end
-            end
+        context "and the pattern is Failure with :type and :details specified" do
+          let(:passed_result) do
+            Pathway::Result.failure(Pathway::Error.new(type: :validation, details: ["name missing", "email missing"]))
+          end
+
+          it "returns the result according to :type" do
+            expect(result).to eq("Invalid: name missing, email missing")
+          end
+        end
+
+        context "and the pattern is Failure with no specified :type" do
+          let(:passed_result) do
+            Pathway::Result.failure(Pathway::Error.new(type: :misc, details: %w[some errors]))
+          end
+
+          it "executes the least specific pattern" do
+            expect(result).to eq("Other: some errors")
           end
         end
       end

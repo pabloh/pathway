@@ -28,8 +28,7 @@ module Pathway
       end
     end
 
-    class DSL
-    end
+    class DSL; end
   end
 
   class Error
