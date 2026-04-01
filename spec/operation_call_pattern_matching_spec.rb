@@ -3,7 +3,8 @@
 require "spec_helper"
 
 RSpec.describe "Operation call with pattern matching" do
-  include Pathway::Result::Mixin
+  Success = Pathway::Result::Success
+  Failure = Pathway::Result::Failure
 
   before do
     stub_const("RespOperation", Class.new(Pathway::Operation) do
@@ -22,8 +23,8 @@ RSpec.describe "Operation call with pattern matching" do
     context "providing a single variable name as pattern" do
       let(:result) do
         case RespOperation.call(context, input)
-        in Pathway::Result::Success(value) then "Returning: " + value
-        in Pathway::Result::Failure(error) then error.message
+        in Success(value) then "Returning: " + value
+        in Failure(error) then error.message
         end
       end
 
@@ -53,8 +54,8 @@ RSpec.describe "Operation call with pattern matching" do
         it "raises a non matching error" do
           expect do
             case RespOperation.call(context, input)
-            in Pathway::Result::Success(value:) then value
-            in Pathway::Result::Failure(error) then error
+            in Success(value:) then value
+            in Failure(error) then error
             end
           end.to raise_error(NoMatchingPatternError)
         end
@@ -62,10 +63,10 @@ RSpec.describe "Operation call with pattern matching" do
 
       let(:result) do
         case RespOperation.call(context, input)
-        in Pathway::Result::Success(value) then "Returning: " + value
-        in Pathway::Result::Failure(type: :forbidden) then "Forbidden"
-        in Pathway::Result::Failure(type: :validation, details:) then "Invalid: " + details.join(", ")
-        in Pathway::Result::Failure(details:) then "Other: " + details.join(" ")
+        in Success(value) then "Returning: " + value
+        in Failure(type: :forbidden) then "Forbidden"
+        in Failure(type: :validation, details:) then "Invalid: " + details.join(", ")
+        in Failure(details:) then "Other: " + details.join(" ")
         end
       end
 
@@ -113,10 +114,10 @@ RSpec.describe "Operation call with pattern matching" do
     context "providing Array based patterns," do
       let(:result) do
         case RespOperation.call(context, input)
-        in Pathway::Result::Success(value) then "Returning: " + value
-        in Pathway::Result::Failure([:forbidden,]) then "Forbidden"
-        in Pathway::Result::Failure([:validation, _, details]) then "Invalid: " + details.join(", ")
-        in Pathway::Result::Failure([*, details]) then "Other: " + details.join(" ")
+        in Success(value) then "Returning: " + value
+        in Failure([:forbidden,]) then "Forbidden"
+        in Failure([:validation, _, details]) then "Invalid: " + details.join(", ")
+        in Failure([*, details]) then "Other: " + details.join(" ")
         end
       end
 
