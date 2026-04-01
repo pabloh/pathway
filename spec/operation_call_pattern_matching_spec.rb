@@ -3,10 +3,10 @@
 require "spec_helper"
 
 RSpec.describe "Operation call with pattern matching" do
-  Success = Pathway::Result::Success
-  Failure = Pathway::Result::Failure
-
   before do
+    stub_const("Success", Pathway::Result::Success)
+    stub_const("Failure", Pathway::Result::Failure)
+
     stub_const("RespOperation", Class.new(Pathway::Operation) do
       context :with
 
@@ -21,6 +21,8 @@ RSpec.describe "Operation call with pattern matching" do
 
   context "when calling operation using 'case'" do
     context "providing a single variable name as pattern" do
+      include Pathway::Result::Mixin
+
       let(:result) do
         case RespOperation.call(context, input)
         in Success(value) then "Returning: " + value

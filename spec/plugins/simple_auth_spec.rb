@@ -2,142 +2,139 @@
 
 require "spec_helper"
 
-module Pathway
-  module Plugins
-    RSpec.describe "SimpleAuth" do
-      before do
-        stub_const("AuthOperation", Class.new(Operation) do
-          plugin :simple_auth
+RSpec.describe "SimpleAuth plugin" do
+  before do
+    stub_const("Operation", Pathway::Operation)
+    stub_const("AuthOperation", Class.new(Operation) do
+      plugin :simple_auth
 
-          context :user
+      context :user
 
-          authorization { user.role == :admin }
+      authorization { user.role == :admin }
 
-          process do
-            step :authorize
-          end
-        end)
+      process do
+        step :authorize
+      end
+    end)
 
-        stub_const("AuthOperationParam", Class.new(Operation) do
-          plugin :simple_auth
+    stub_const("AuthOperationParam", Class.new(Operation) do
+      plugin :simple_auth
 
-          context value: :RESULT
+      context value: :RESULT
 
-          authorization { |value| value == :RESULT }
+      authorization { |value| value == :RESULT }
 
-          process do
-            step :authorize
-          end
-        end)
+      process do
+        step :authorize
+      end
+    end)
 
-        stub_const("AuthOperationMultiParam", Class.new(Operation) do
-          plugin :simple_auth
+    stub_const("AuthOperationMultiParam", Class.new(Operation) do
+      plugin :simple_auth
 
-          context :value1, :value2
+      context :value1, :value2
 
-          authorization { |first, second| first == 10 && second == 20 }
+      authorization { |first, second| first == 10 && second == 20 }
 
-          process do
-            step :authorize, using: %i[value1 value2]
-          end
-        end)
+      process do
+        step :authorize, using: %i[value1 value2]
+      end
+    end)
 
-        stub_const("AuthOperationWithArray", Class.new(Operation) do
-          plugin :simple_auth
+    stub_const("AuthOperationWithArray", Class.new(Operation) do
+      plugin :simple_auth
 
-          context :values
+      context :values
 
-          authorization { |values| values.size.even? }
+      authorization { |values| values.size.even? }
 
-          process do
-            step :authorize, using: :values
-          end
-        end)
+      process do
+        step :authorize, using: :values
+      end
+    end)
+  end
+
+  describe "#authorize" do
+    subject(:operation) { AuthOperationParam.new }
+
+    context "with no options" do
+      it "passes the current result to the authorization block to authorize", :aggregate_failures do
+        expect(operation.authorize({ value: :RESULT })).to be_a_success
+      end
+    end
+
+    context "with :using argument" do
+      it "passes then value for :key from the context to the authorization block to authorize", :aggregate_failures do
+        expect(operation.authorize({ foo: :RESULT }, using: :foo)).to be_a_success
+        expect(operation.authorize({ foo: :ELSE }, using: :foo)).to be_a_failure
+      end
+    end
+  end
+
+  describe "#call" do
+    context "when the authorization blocks expects no params" do
+      subject(:operation) { AuthOperation.new(context) }
+      let(:context) { { user: double(role: role) } }
+
+      context "and calling with proper authorization" do
+        let(:role) { :admin }
+        it "returns a successful result", :aggregate_failures do
+          expect(operation).to succeed_on({})
+        end
       end
 
-      describe "#authorize" do
+      context "and calling with without proper authorization" do
+        let(:role) { :user }
+        it "returns a failed result", :aggregate_failures do
+          expect(operation).to fail_on({}).with_type(:forbidden)
+        end
+      end
+    end
+
+    context "when the authorization blocks expects a single param" do
+      context "and calling with proper authorization" do
         subject(:operation) { AuthOperationParam.new }
-
-        context "with no options" do
-          it "passes the current result to the authorization block to authorize", :aggregate_failures do
-            expect(operation.authorize({ value: :RESULT })).to be_a_success
-          end
-        end
-
-        context "with :using argument" do
-          it "passes then value for :key from the context to the authorization block to authorize", :aggregate_failures do
-            expect(operation.authorize({ foo: :RESULT }, using: :foo)).to be_a_success
-            expect(operation.authorize({ foo: :ELSE }, using: :foo)).to be_a_failure
-          end
+        it "returns a successful result", :aggregate_failures do
+          expect(operation).to succeed_on({})
         end
       end
 
-      describe "#call" do
-        context "when the authorization blocks expects no params" do
-          subject(:operation) { AuthOperation.new(context) }
-          let(:context) { { user: double(role: role) } }
-
-          context "and calling with proper authorization" do
-            let(:role) { :admin }
-            it "returns a successful result", :aggregate_failures do
-              expect(operation).to succeed_on({})
-            end
-          end
-
-          context "and calling with without proper authorization" do
-            let(:role) { :user }
-            it "returns a failed result", :aggregate_failures do
-              expect(operation).to fail_on({}).with_type(:forbidden)
-            end
-          end
+      context "and calling without proper authorization" do
+        subject(:operation) { AuthOperationParam.new(value: :OTHER) }
+        it "returns a failed result", :aggregate_failures do
+          expect(operation).to fail_on({}).with_type(:forbidden)
         end
+      end
+    end
 
-        context "when the authorization blocks expects a single param" do
-          context "and calling with proper authorization" do
-            subject(:operation) { AuthOperationParam.new }
-            it "returns a successful result", :aggregate_failures do
-              expect(operation).to succeed_on({})
-            end
-          end
-
-          context "and calling without proper authorization" do
-            subject(:operation) { AuthOperationParam.new(value: :OTHER) }
-            it "returns a failed result", :aggregate_failures do
-              expect(operation).to fail_on({}).with_type(:forbidden)
-            end
-          end
+    context "when the authorization blocks expects multiple params" do
+      context "and calling with proper authorization" do
+        subject(:operation) { AuthOperationMultiParam.new(value1: 10, value2: 20) }
+        it "returns a successful result", :aggregate_failures do
+          expect(operation).to succeed_on({})
         end
+      end
 
-        context "when the authorization blocks expects multiple params" do
-          context "and calling with proper authorization" do
-            subject(:operation) { AuthOperationMultiParam.new(value1: 10, value2: 20) }
-            it "returns a successful result", :aggregate_failures do
-              expect(operation).to succeed_on({})
-            end
-          end
-
-          context "and calling without proper authorization" do
-            subject(:operation) { AuthOperationMultiParam.new(value1: -11, value2: 99) }
-            it "returns a failed result", :aggregate_failures do
-              expect(operation).to fail_on({}).with_type(:forbidden)
-            end
-          end
+      context "and calling without proper authorization" do
+        subject(:operation) { AuthOperationMultiParam.new(value1: -11, value2: 99) }
+        it "returns a failed result", :aggregate_failures do
+          expect(operation).to fail_on({}).with_type(:forbidden)
         end
+      end
+    end
 
-        context "when the authorization blocks expects an array as param" do
-          context "and calling with proper authorization" do
-            subject(:operation) { AuthOperationWithArray.new(values: [3, 5]) }
-            it "returns a successful result", :aggregate_failures do
-              expect(operation).to succeed_on({})
-            end
-          end
+    context "when the authorization blocks expects an array as param" do
+      context "and calling with proper authorization" do
+        subject(:operation) { AuthOperationWithArray.new(values: [3, 5]) }
+        it "returns a successful result", :aggregate_failures do
+          expect(operation).to succeed_on({})
+        end
+      end
 
-          context "and calling without proper authorization" do
-            subject(:operation) { AuthOperationWithArray.new(values: [3, 4, 5]) }
-            it "returns a failed result", :aggregate_failures do
-              expect(operation).to fail_on({}).with_type(:forbidden)
-            end
-          end
+      context "and calling without proper authorization" do
+        subject(:operation) { AuthOperationWithArray.new(values: [3, 4, 5]) }
+        it "returns a failed result", :aggregate_failures do
+          expect(operation).to fail_on({}).with_type(:forbidden)
         end
       end
     end
