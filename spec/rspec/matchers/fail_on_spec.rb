@@ -66,7 +66,7 @@ RSpec.describe ":fail_on matcher" do
       it "fails with a mismatch error for unexpected details" do
         expect do
           expect(failure_operation).to fail_on(input).with_details(name: ["is too short"])
-        end.to fail_with('Expected failed operation to have details like {name: ["is too short"]} but instead got {name: ["is missing"]}')
+        end.to fail_with("Expected failed operation to have details like #{{ name: ['is too short'] }} but instead got #{{ name: ['is missing'] }}") # rubocop:disable Lint/LiteralInInterpolation
       end
 
       it "fails with a detailed mismatch error when two fields are mismatched" do
@@ -87,7 +87,7 @@ RSpec.describe ":fail_on matcher" do
                                          .and_details(name: ["is too short"])
         end.to fail_with("Expected failed operation to have type :validation but instead was :forbidden; " \
                          'have message like "Invalid" but instead got "Nope"; ' \
-                         'and have details like {name: ["is too short"]} but instead got {name: ["is missing"]}')
+                         "and have details like #{{ name: ['is too short'] }} but instead got #{{ name: ['is missing'] }}") # rubocop:disable Lint/LiteralInInterpolation
       end
     end
 
