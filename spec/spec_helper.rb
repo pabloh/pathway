@@ -24,6 +24,8 @@ require "sequel"
 require "pry"
 require "pry-byebug"
 
+require "rspec/matchers/fail_matchers"
+
 # Load testing support files
 Dir[__dir__ + "/support/**/*.rb"].each { |support| require support }
 
@@ -48,6 +50,12 @@ RSpec.configure do |config|
 
   config.shared_context_metadata_behavior = :apply_to_host_groups
   config.filter_run_when_matching :focus
+
+  config.include RSpec::Matchers::FailMatchers, type: :matcher
+
+  config.define_derived_metadata(file_path: %r{/spec/rspec/matchers}) do |metadata|
+    metadata[:type] = :matcher
+  end
 
   config.order = :random
   Kernel.srand config.seed
