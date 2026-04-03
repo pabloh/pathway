@@ -147,6 +147,8 @@ module Pathway
       end
 
       module DSLMethods
+        module CallStep; end
+
         def initialize(state, operation)
           @result, @operation = wrap(state), operation
         end
@@ -157,14 +159,14 @@ module Pathway
         end
 
         # Execute step and preserve the former state
-        def step(callable, *, **)
-          bl = _callable(callable)
+        def step(callable, *, **, &)
+          bl = _callable(callable, &)
           @result = @result.tee { |state| bl.call(state, *, **) }
         end
 
         # Execute step and modify the former state setting the key
-        def set(callable, *args, to: @operation.result_key, **kwargs)
-          bl = _callable(callable)
+        def set(callable, *args, to: @operation.result_key, **kwargs, &)
+          bl = _callable(callable, &)
 
           @result = @result.then do |state|
             wrap(bl.call(state, *args, **kwargs))
@@ -196,14 +198,23 @@ module Pathway
 
         def wrap(obj) = Result.result(obj)
 
-        def _callable(callable)
-          case callable
-          when Proc # unless (callable.binding rescue nil)&.receiver == @operation
-            ->(*args, **kwargs) { @operation.instance_exec(*args, **kwargs, &callable) }
-          when Symbol
-            ->(*args, **kwargs) { @operation.send(callable, *args, **kwargs) }
+        def _callable(callable, &block)
+          if block_given?
+            raise ArgumentError, "You must either pass a block or a callable but not both" unless callable.is_a?(Symbol)
+
+            warn "The operation already responds to a message of the same name" if @operation.respond_to?(callable)
+            _callable(block)
           else
-            callable
+            case callable
+            when CallStep
+              callable
+            when Proc
+              ->(*args, **kwargs) { @operation.instance_exec(*args, **kwargs, &callable) }.extend(CallStep)
+            when Symbol
+              ->(*args, **kwargs) { @operation.send(callable, *args, **kwargs) }.extend(CallStep)
+            else # rubocop:disable Lint/DuplicateBranch
+              callable
+            end
           end
         end
       end

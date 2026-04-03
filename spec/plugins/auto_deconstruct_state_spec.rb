@@ -14,7 +14,7 @@ RSpec.describe "AutoDeconstructState plugin" do
         step :fetch_and_set_name, with: :id
         set  :fetch_email, to: :email
         set  :create_model
-        step :notify
+        step(:notify) { |value:, **| @notifier.call(value) }
       end
 
       def custom_validate(state)
@@ -31,12 +31,6 @@ RSpec.describe "AutoDeconstructState plugin" do
 
       def create_model(name:, email:, **)
         UserModel.new(name, email)
-      end
-
-      def notify(st)
-        st.u do |value:|
-          @notifier.call(value)
-        end
       end
     end)
 
