@@ -12,16 +12,17 @@ jobs:
     strategy:
       matrix:
         ruby-version: [3.3, 3.4, 4.0]
+        test-suite: ['spec', 'spec_without_active_support']
     steps:
     - uses: actions/checkout@v6
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby-version }}
-        bundler: '2.5.6'
+        bundler: '4.0.10'
         bundler-cache: true
     - name: Run tests
-      run: bundle exec rake
+      run: bundle exec rake ${{ matrix.test-suite }}
   coveralls:
     runs-on: ubuntu-latest
     steps:
@@ -30,7 +31,7 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: '4.0'
-        bundler: '2.5.6'
+        bundler: '4.0.10'
         bundler-cache: true
     - name: Run tests for coverage
       run: bundle exec rake
@@ -46,7 +47,7 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: '4.0'
-        bundler: '2.5.6'
+        bundler: '4.0.10'
         bundler-cache: true
     - name: Run RuboCop
       run: bundle exec rubocop --force-exclusion
